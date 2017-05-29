@@ -127,7 +127,7 @@ for w in test:
         responses = dict(get_connections({w:1}, depth, current_depth=1))
         responses[w.upper()] = 0
         responses[w] = 0
-        for k, vin sorted(responses.items(), key=lambda x: x[1], reverse=True)[:5]:
+        for k, v in sorted(responses.items(), key=lambda x: x[1], reverse=True)[:5]:
             print("\t\t%s\t\t%.3f" % (k, v))
 
 
