@@ -82,8 +82,8 @@ from collections import Counter
 #                     annotations=make_annotations(pos, labels))
 #     }, filename = fname + '.html')
 
-def get_connections(responses, i):
-    if i > level:
+def get_connections(responses, depth, current_depth):
+    if current_depth > depth:
         return(responses)
     else:
         responses_current_level = dict()
@@ -93,15 +93,15 @@ def get_connections(responses, i):
             total = sum(new.values())
             responses_single_word = {k:v/total*weight for k,v in new.items()}
             responses_current_level = dict(sum((Counter(x) for x in [responses_current_level, responses_single_word]), Counter()))
-        i += 1
-        responses_next_level = get_connections(responses_current_level, i)
+        current_depth += 1
+        responses_next_level = get_connections(responses_current_level, depth, current_depth)
         final = dict(sum((Counter(x) for x in [responses_current_level, responses_next_level]), Counter()))
         return(final)
 
 fn="EATnew"
 
-if os.path.isfile(fn+"_directed") and os.path.isfile(fn+"_undirected"):
-    with open(fn+"_directed") as jc:
+if os.path.isfile("./EAT/"+fn+"_directed") and os.path.isfile("./EAT/"+fn+"_undirected"):
+    with open("./EAT/"+fn+"_directed") as jc:
         G = json_graph.node_link_graph(json.load(jc))
 else:
     M = nx.read_pajek("./EAT/"+fn+".net")
@@ -112,20 +112,23 @@ else:
             D[u][v]['weight'] += w
         else:
             D.add_edge(u, v, weight=w)
-    with open(fn+"_directed", 'w') as outfile:
+    with open("./EAT/"+fn+"_directed", 'w') as outfile:
         json.dump(json_graph.node_link_data(D), outfile)
     G = D.to_undirected()
-    with open(fn+"_undirected", 'w') as outfile:
+    with open("./EAT/"+fn+"_undirected", 'w') as outfile:
         json.dump(json_graph.node_link_data(G), outfile)
 
-test = ["skirt"]
+test = ["skirt", "potato"]
 
 for w in test:
-    for level in [1, 2, 3]:
-        responses = {w:1}
-        responses = dict(get_connections(responses, 1))
+    print("CUE:",w)
+    for depth in range(1,3):
+        print("\tMAX DEPTH:", depth)
+        responses = dict(get_connections({w:1}, depth, current_depth=1))
         responses[w.upper()] = 0
-        print(w, sorted(responses.items(), key=lambda x: x[1], reverse=True)[:10])
+        responses[w] = 0
+        for k, v in sorted(responses.items(), key=lambda x: x[1], reverse=True)[:5]:
+            print("\t\t%s\t\t%.3f" % (k, v))
 
 
 # Plotting.
