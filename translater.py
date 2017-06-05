@@ -3,6 +3,14 @@ import re
 from dutch import Graphnx
 
 def dict_parser():
+    '''
+    returns a dictionary of Dutch-->English
+    
+    every Dutch word has a corresponding list of English words that it is translated to.
+    
+    The direct variable is the location of the .tei file
+    
+    '''
     
     direct = '/Users/amirardalankalantaridehgahi/Desktop/school/stevensonRA/dict'  #change it
     fil = open(os.path.join(direct, "nld-eng.tei"), "r")
@@ -41,11 +49,13 @@ def dict_parser():
         
         #if count == 20:
         #    break
+    print(count, '  count')
     return DICT
 
 
 if __name__ == "__main__":
     dikt = dict_parser()
+    raw_input()
     G = Graphnx()
     nodes = G.nodes()
     
@@ -57,6 +67,7 @@ if __name__ == "__main__":
             hits = hits + 1
             
         else:
+            print(n, '  MISSSEEEEDDDDDDDD')
             miss = miss + 1
             
     print(hits , '  hits')
