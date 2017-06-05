@@ -1,6 +1,6 @@
 import os
 import re
-
+from dutch import Graphnx
 
 def dict_parser():
     
@@ -42,3 +42,22 @@ def dict_parser():
         #if count == 20:
         #    break
     return DICT
+
+
+if __name__ == "__main__":
+    dikt = dict_parser()
+    G = Graphnx()
+    nodes = G.nodes()
+    
+    hits = 0
+    miss = 0
+    
+    for n in nodes:
+        if n in dikt:
+            hits = hits + 1
+            
+        else:
+            miss = miss + 1
+            
+    print(hits , '  hits')
+    print(miss , '   misses')
