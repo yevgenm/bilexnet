@@ -54,6 +54,11 @@ def dict_parser():
 
 
 if __name__ == "__main__":
+    
+    '''
+    This script shows how many of the words in the lexical Dutch graph have a corresponding English tranlastion.
+    
+    '''
     dikt = dict_parser()
     raw_input()
     G = Graphnx()
