@@ -71,7 +71,7 @@ def Engpreprocess():
             l1 = 'x'
         new_chunk.append(line[0] + ' ' + lemmatizer(l1.lower()) + '\n')
     
-    d.writelines(l[:231])
+    d.writelines(l[:232])
     d.writelines(new_chunk)
     d.writelines(l[23251:])
     d.close()
