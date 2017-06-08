@@ -1,6 +1,7 @@
 import os
 import re
-from dutch import Graphnx
+from networks import Graphnx
+from networks import get_english_digraph
 
 def dict_parser():
     '''
@@ -12,7 +13,7 @@ def dict_parser():
     
     '''
     
-    direct = '/Users/amirardalankalantaridehgahi/Desktop/school/stevensonRA/dict'  #change it
+    direct = './freedict'  #change it
     fil = open(os.path.join(direct, "nld-eng.tei"), "r")
 
     tei = fil.readlines()
@@ -60,20 +61,46 @@ if __name__ == "__main__":
     
     '''
     dikt = dict_parser()
-    raw_input()
-    G = Graphnx()
-    nodes = G.nodes()
-    
+    # raw_input()
+    # G = Graphnx()
+    # nodes = G.nodes()
+    #
+    # hits = 0
+    # miss = 0
+    #
+    # for n in nodes:
+    #     if n in dikt:
+    #         hits = hits + 1
+    #
+    #     else:
+    #         print(n, '  MISSSEEEEDDDDDDDD')
+    #         miss = miss + 1
+    #
+    # print(hits , '  hits')
+    # print(miss , '   misses')
+
+
+    EG = get_english_digraph()
+    nodes = EG.nodes()
+
     hits = 0
     miss = 0
-    
-    for n in nodes:
-        if n in dikt:
-            hits = hits + 1
-            
-        else:
-            print(n, '  MISSSEEEEDDDDDDDD')
-            miss = miss + 1
-            
-    print(hits , '  hits')
-    print(miss , '   misses')
+
+    dikt_values = [item for sublist in dikt.values() for item in sublist]
+    with open("dic2", 'w') as f_dict:
+        for w in set(dikt_values):
+            f_dict.write(w.lower())
+            f_dict.write("\n")
+
+
+    # for n in nodes:
+    #     if n in dikt_values:
+    #         hits = hits + 1
+    #
+    #     else:
+    #         #print(n, '  MISSSEEEEDDDDDDDD')
+    #         miss = miss + 1
+    #
+    # print(hits, '  hits')
+    # print(miss, '   misses')
+

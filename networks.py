@@ -4,11 +4,12 @@ import networkx as nx
 from networkx.readwrite import json_graph
 from collections import Counter
 import re
+import csv
 
 
 def Graphnx():
     count = 1
-    f = open("./Dutch/associationData.csv")
+    f = open("./Dutch/associationDataLemmas.csv")
     l = f.readlines()
     l = l[1:]
     G = nx.DiGraph()
@@ -82,9 +83,13 @@ def get_connections(G, responses, depth, current_depth):
         final = dict(sum((Counter(x) for x in [responses_current_level, responses_next_level]), Counter()))
         return(final)
 
-def test_network(D, test_list, max_depth):
+def test_network_print(D, test_list, max_depth, gold={}):
     for w in test_list:
         print("CUE:",w)
+        if gold:
+            print("\tGOLD")
+            for k, v in sorted(gold[w], key=lambda x: x[1], reverse=True)[:5]:
+                print("\t\t%s\t\t%.3f" % (k, v))
         for depth in range(1, max_depth):
             print("\tMAX DEPTH:", depth)
             responses = dict(get_connections(D, {w:1}, depth, current_depth=1))
@@ -92,15 +97,59 @@ def test_network(D, test_list, max_depth):
             for k, v in sorted(responses.items(), key=lambda x: x[1], reverse=True)[:5]:
                 print("\t\t%s\t\t%.3f" % (k, v))
 
+def preprocess_word(w):
+    if w[0:2] == "vk":
+        w = w[2:]
+    if w=="geen":
+        return None
+    if "(" in w:
+        w = w[:w.index("(")]
+    return(w)
+
+def read_test_file(fn):
+    conditions = fn.split("/")[-1].split('.')[0].split('-')
+    cue_langs = [c[0] for c in conditions]
+    target_langs = [c[1] for c in conditions]
+    n_conds = len(conditions)
+    resp_dict = {}
+    with open(fn) as f:
+        test_reader = csv.reader(f, delimiter=",")
+        next(test_reader)
+        for row in test_reader:
+            cue = row[1]
+            responses_mixed = row[3:]
+            for cond_idx in range(n_conds):
+                cue_lang = cue_langs[cond_idx]
+                target_lang = target_langs[cond_idx]
+                if cue_lang not in resp_dict:
+                    resp_dict[cue_lang] = {}
+                if target_lang not in resp_dict[cue_lang]:
+                    resp_dict[cue_lang][target_lang] = []
+                target_responses = [(cue, preprocess_word(responses_mixed[r_idx])) for r_idx in range(len(responses_mixed))
+                                    if r_idx%n_conds==cond_idx and preprocess_word(responses_mixed[r_idx])!=None]
+                resp_dict[cue_lang][target_lang].extend(target_responses)
+    return(resp_dict)
+
 
 if __name__ == "__main__":
-    enD = get_english_digraph()
+    #enD = get_english_digraph()
     nlD = get_dutch_digraph()
 
-    test = ["skirt", "potato"]
-    test_network(enD, test, 4)
+    # DD_DE_test_dict = read_test_file("./vanhell/DD1-DE2-DD3.csv")
+    # DD_test_list = DD_DE_test_dict['D']['D']
+    # gold_dict = {}
+    # for (c, r), f in Counter(DD_test_list).items():
+    #     if c not in gold_dict: gold_dict[c] = []
+    #     gold_dict[c].append((r,f))
+    #
+    # for cue in gold_dict.keys():
+    #     test_network_print(nlD,[cue],3,gold_dict)
+
+
+    #test = ["skirt", "potato"]
+    #test_network_print(enD, test, 4)
 
     #test = ["oneindig", "eeuwig"]
-    #test_network(nlD, test, 4)
+    #test_network_print(nlD, test, 4)
 
 

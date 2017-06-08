@@ -1,6 +1,6 @@
 import os
 import re
-from dutch import Graphnx
+from networks import Graphnx
 from nltk import pos_tag
 from nltk import WordNetLemmatizer
 from nltk.corpus import wordnet as wn
@@ -20,7 +20,7 @@ def lemmatizer(word):
     lemmatizer = WordNetLemmatizer()
     lemma = lemmatizer.lemmatize(word, tag_wn)
     #print('wwwww   ',lemma.encode('ascii', 'ignore'))
-    return lemma.encode('ascii', 'ignore')
+    return lemma.encode('ascii', 'ignore').decode('ascii')
 
 
 def Dutchpreproc():
@@ -54,7 +54,7 @@ def Dutchpreproc():
 def Engpreprocess():
     f = open("./EAT/EATnew.net")
     
-    d = open("modEAT.net", 'w')
+    d = open("./EATEATnewLemmas.net", 'w')
     
     l = f.readlines()
     chunk = l[232:23251]
@@ -74,7 +74,7 @@ def Engpreprocess():
     d.writelines(l[:231])
     d.writelines(new_chunk)
     d.writelines(l[23251:])
-    d.close
+    d.close()
         
         
     
@@ -82,7 +82,7 @@ def Engpreprocess():
 
 if __name__ == "__main__":
     #Dutchpreproc()
-    #Engpreprocess()
+    Engpreprocess()
     
     
     
