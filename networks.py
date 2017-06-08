@@ -55,6 +55,25 @@ def get_english_digraph():
             json.dump(json_graph.node_link_data(D), outfile)
     return D
 
+def get_lemmatized_english_digraph(new):
+    if os.path.isfile("./EAT/EATnew_directed") and new=="no":
+        with open("./EAT/EATnew_directed") as jc:
+            D = json_graph.node_link_graph(json.load(jc))
+    else:
+        M = nx.read_pajek("modEAT.net")
+        D = nx.DiGraph()
+        for u, v, data in M.edges_iter(data=True):
+            w = data['weight'] if 'weight' in data else 1.0
+            if D.has_edge(u, v):
+                D[u][v]['weight'] += w
+            else:
+                D.add_edge(u.lower(), v.lower(), weight=w)
+        with open("./EAT/EATnew_directed", 'w') as outfile:
+            json.dump(json_graph.node_link_data(D), outfile)
+    return D
+
+
+
 def get_dutch_digraph():
     if os.path.isfile("./Dutch/associationData_directed"):
         with open("./Dutch/associationData_directed") as jc:
@@ -94,6 +113,9 @@ def test_network(D, test_list, max_depth):
 
 
 if __name__ == "__main__":
+    print('runnning')
+    get_lemmatized_english_digraph("yes")
+    raw_input()
     enD = get_english_digraph()
     nlD = get_dutch_digraph()
 
