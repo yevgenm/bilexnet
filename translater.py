@@ -36,7 +36,8 @@ def nld_eng_parser():
             if line.strip()[:6] == "<orth>":
                 line = re.sub(r'<orth>', '',line.strip()) 
                 line = re.sub(r'</orth>', '',line)
-                DICT[line] = []
+                if line not in DICT:
+                    DICT[line] = []
                 entrant = line
                 print(entrant,'  entry')
                 
@@ -54,9 +55,9 @@ def nld_eng_parser():
 
 def eng_nld_parser():
     '''
-    returns a dictionary of Dutch-->English
+    returns a dictionary of English-->Dutch
     
-    every Dutch word has a corresponding list of English words that it is translated to.
+    every English word has a corresponding list of Dutch words that it is translated to.
     
     The direct variable is the location of the .tei file
     
@@ -86,7 +87,8 @@ def eng_nld_parser():
             if line.strip()[:6] == "<orth>":
                 line = re.sub(r'<orth>', '',line.strip()) 
                 line = re.sub(r'</orth>', '',line)
-                DICT[line] = []
+                if line not in DICT:
+                    DICT[line] = []
                 entrant = line
                 print(entrant,'  entry')
                 
@@ -103,6 +105,61 @@ def eng_nld_parser():
     return DICT
 
 
+
+def cc_parser():
+    dikt = {}
+    f = open("dict_cc_en_nl.tsv")
+    l = f.readlines()
+    for i in l:
+        line = i.split('\t')
+        if line[0] not in dikt:
+            dikt[line[0]] = []
+        dikt[line[0]].append(line[1].strip('\n'))
+    return dikt
+
+
+
+def nld_eng_reverser():
+    dikt = nld_eng_parser()
+    DIKT = {}
+    for nld in dikt:
+        for eng in dikt[nld]:
+            if eng not in DIKT:
+                DIKT[eng] = set()
+            DIKT[eng].add(nld)
+            
+    return DIKT
+            
+        
+    
+    
+    
+def parser_helper(final, DICT):
+    for eng in DICT:
+        for nld in DICT[eng]:
+            if eng not in final:
+                final[eng] = set()
+            final[eng].add(nld)
+            
+    return final
+    
+    
+def full_dict():
+    cc = cc_parser()
+    rev = nld_eng_reverser()
+    eng = eng_nld_parser()
+    
+    final = {}
+    raw_input()
+    final = parser_helper(final,cc)
+    raw_input()
+    final = parser_helper(final,rev)
+    raw_input()
+    final = parser_helper(final, eng)
+    raw_input()
+    return final
+    
+    
 if __name__ == "__main__":
     
     '''
@@ -135,7 +192,7 @@ if __name__ == "__main__":
     '''
     94 entries have no tranlastion
     '''
-    
+    '''
     dikt = eng_nld_parser()
     
     dutch_domain = []
@@ -161,7 +218,9 @@ if __name__ == "__main__":
             
     print(hits , '  hits')
     print(miss , '   misses')
+    '''
     
+    d = full_dict()
     
     
     
