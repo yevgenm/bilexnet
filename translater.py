@@ -1,7 +1,10 @@
 import os
 import re
 from dutch import Graphnx
-
+import json
+import pickle
+import numpy as np
+import csv
 def nld_eng_parser():
     '''
     returns a dictionary of Dutch-->English
@@ -160,6 +163,22 @@ def full_dict():
     return final
     
     
+    
+
+def csvwriter():
+    d = full_dict()
+    with open('dictionary.csv', 'w') as csvfile:
+        fieldnames = ['English', 'Dutch']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()
+        for eng in d:
+            for dutch in d[eng]:
+                writer.writerow({'English': eng, 'Dutch': dutch})
+                print(eng,dutch)
+        
+        
+        
 if __name__ == "__main__":
     
     '''
@@ -220,8 +239,7 @@ if __name__ == "__main__":
     print(miss , '   misses')
     '''
     
-    d = full_dict()
-    
+    csvwriter()
     
     
 
