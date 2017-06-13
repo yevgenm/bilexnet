@@ -5,6 +5,7 @@ import json
 import pickle
 import numpy as np
 import csv
+
 def nld_eng_parser():
     '''
     returns a dictionary of Dutch-->English
