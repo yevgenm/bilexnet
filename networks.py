@@ -4,11 +4,15 @@ import networkx as nx
 from networkx.readwrite import json_graph
 from collections import Counter
 import re
+import csv
+import utils
+import random
+import ml_metrics as metrics
 
 
-def Graphnx():
+def Graphnx(fn):
     count = 1
-    f = open("./Dutch/associationData.csv")
+    f = open(fn)
     l = f.readlines()
     l = l[1:]
     G = nx.DiGraph()
@@ -74,16 +78,18 @@ def get_lemmatized_english_digraph(new):
 
 
 
-def get_dutch_digraph():
-    if os.path.isfile("./Dutch/associationData_directed"):
-        with open("./Dutch/associationData_directed") as jc:
+def get_dutch_digraph(lemmatized):
+    fn = "./Dutch/associationData"
+    if lemmatized:
+        fn += "Lemmas"
+    if os.path.isfile(fn+"_directed"):
+        with open(fn+"_directed") as jc:
             D = json_graph.node_link_graph(json.load(jc))
     else:
-        D = Graphnx()
-        with open("./Dutch/associationData_directed", 'w') as outfile:
+        D = Graphnx(fn+".csv")
+        with open(fn+"_directed", 'w') as outfile:
             json.dump(json_graph.node_link_data(D), outfile)
     return D
-
 
 def get_connections(G, responses, depth, current_depth):
     if current_depth > depth:
@@ -101,28 +107,114 @@ def get_connections(G, responses, depth, current_depth):
         final = dict(sum((Counter(x) for x in [responses_current_level, responses_next_level]), Counter()))
         return(final)
 
-def test_network(D, test_list, max_depth):
-    for w in test_list:
-        print("CUE:",w)
-        for depth in range(1, max_depth):
+def normalize_dict(d, target=1.0):
+   raw = sum(d.values())
+   factor = target/raw
+   return {key:value*factor for key,value in d.items()}
+
+def test_network(D, test_list, depth, gold=None, verbose=True):
+    tvd = 0
+    rbd = 0
+    apk = 0
+    apk_k = 1000
+    test_list_cleaned = [w for w in test_list if w in D.nodes()]
+    for w in test_list_cleaned:
+        gold_local = dict(gold[w])
+        gold_clean = {k:v for k,v in gold_local.items() if gold_local[k] > 1}
+        d_gold = normalize_dict(gold_clean)
+        l_gold = sorted(d_gold.items(), key=lambda x: x[1], reverse=True)
+        k_gold = [pair[0] for pair in l_gold]
+        d_resp = normalize_dict(dict(get_connections(D, {w:1}, depth, current_depth=1)))
+        if w in d_resp:
+            del d_resp[w]
+        l_resp = sorted(d_resp.items(), key=lambda x: x[1], reverse=True)
+        k_resp = [pair[0] for pair in l_resp]
+        if verbose:
+            print("CUE:",w)
+            if gold:
+                print("\tGOLD")
+                for k, v in l_gold[:5]:
+                    print("\t\t%s\t\t%.3f" % (k, v))
             print("\tMAX DEPTH:", depth)
-            responses = dict(get_connections(D, {w:1}, depth, current_depth=1))
-            responses[w] = 0
-            for k, v in sorted(responses.items(), key=lambda x: x[1], reverse=True)[:5]:
+            for k,v in l_resp[:5]:
                 print("\t\t%s\t\t%.3f" % (k, v))
+        if gold:
+            tvd += 0.5 * sum(abs((d_gold.get(resp) or 0) - (d_resp.get(resp) or 0)) for resp in set(d_gold) | set(d_resp))
+            rbd += utils.get_rbd(k_gold, k_resp)
+            apk += 1-metrics.apk(k_gold, k_resp, apk_k)
+    if gold:
+        tvd /= len(test_list_cleaned)
+        rbd /= len(test_list_cleaned)
+        apk /= len(test_list_cleaned)
+        print("Total variation distance :", tvd)
+        print("Rank-biased distance :", rbd)
+        print("Average precision (distance) at", apk_k, ":", apk)
+
+
+def preprocess_word(w):
+    if w[0:2] == "vk":
+        w = w[2:]
+    if w=="geen":
+        return None
+    if "(" in w:
+        w = w[:w.index("(")]
+    return(w)
+
+def read_test_file(fn):
+    conditions = fn.split("/")[-1].split('.')[0].split('-')
+    cue_langs = [c[0] for c in conditions]
+    target_langs = [c[1] for c in conditions]
+    n_conds = len(conditions)
+    resp_dict = {}
+    with open(fn) as f:
+        test_reader = csv.reader(f, delimiter=",")
+        next(test_reader)
+        for row in test_reader:
+            cue = row[1]
+            responses_mixed = row[3:]
+            for cond_idx in range(n_conds):
+                cue_lang = cue_langs[cond_idx]
+                target_lang = target_langs[cond_idx]
+                if cue_lang not in resp_dict:
+                    resp_dict[cue_lang] = {}
+                if target_lang not in resp_dict[cue_lang]:
+                    resp_dict[cue_lang][target_lang] = []
+                target_responses = [(cue, preprocess_word(responses_mixed[r_idx])) for r_idx in range(len(responses_mixed))
+                                    if r_idx%n_conds==cond_idx and preprocess_word(responses_mixed[r_idx])!=None]
+                resp_dict[cue_lang][target_lang].extend(target_responses)
+    return(resp_dict)
 
 
 if __name__ == "__main__":
-    print('runnning')
-    get_lemmatized_english_digraph("yes")
-    raw_input()
-    enD = get_english_digraph()
-    nlD = get_dutch_digraph()
 
-    test = ["skirt", "potato"]
-    test_network(enD, test, 4)
+
+    DD_DE_test_dict = read_test_file("./vanhell/DD1-DE2-DD3.csv")
+    DD_test_list = DD_DE_test_dict['D']['D']
+    gold_dict = {}
+    for (c, r), f in Counter(DD_test_list).items():
+        if r != "":
+            if c not in gold_dict: gold_dict[c] = []
+            gold_dict[c].append((r,f))
+
+    #get_lemmatized_english_digraph("yes")
+    #enD = get_english_digraph()
+    nlD = get_dutch_digraph(lemmatized=False)
+    nlD2 = get_dutch_digraph(lemmatized=True)
+
+    #test_list = random.sample(sorted(gold_dict.keys()), len(gold_dict))
+    test_list = sorted(gold_dict.keys())
+
+    for depth in range(1,3):
+        print("ORIG",depth)
+        test_network(nlD, test_list, depth, gold_dict, verbose=False)
+        print("LEMMAS",depth)
+        test_network(nlD2, test_list, depth, gold_dict, verbose=False)
+
+
+        #test = ["skirt", "potato"]
+    #test_network_print(enD, test, 4)
 
     #test = ["oneindig", "eeuwig"]
-    #test_network(nlD, test, 4)
+    #test_network_print(nlD, test, 4)
 
 
