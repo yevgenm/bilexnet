@@ -1,8 +1,8 @@
 import networkx as nx
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import numpy as np
 import re
-import pydotplus
+#import pydotplus
 from collections import Counter
 
 #np.set_printoptions(threshold=np.nan)
@@ -116,7 +116,7 @@ def get_connections(G, responses, depth, current_depth):
         responses_current_level = dict()
         for word in sorted(responses):
             weight = responses[word]
-            new = {r[0]:r[1]['weight'] for r in G.edge[word].items()}
+            new = {r[0]:r[1]['weight'] for r in G.out_edges(word)}
             total = sum(new.values())
             responses_single_word = {k:v/total*weight for k,v in new.items()}
             responses_current_level = dict(sum((Counter(x) for x in [responses_current_level, responses_single_word]), Counter()))
@@ -125,7 +125,18 @@ def get_connections(G, responses, depth, current_depth):
         final = dict(sum((Counter(x) for x in [responses_current_level, responses_next_level]), Counter()))
         return(final)
     
-    
+ 
+ 
+def loop(test):
+    for w in test:
+        print("CUE:",w)
+        for depth in range(1,5):
+            print("\tMAX DEPTH:", depth)
+            responses = dict(get_connections(G, {w:1}, depth, current_depth=1))
+            responses[w] = 0
+            responses[w] = 0
+            for k, v in sorted(responses.items(), key=lambda x: x[1], reverse=True)[:5]:
+                print("\t\t%s\t\t%.3f" % (k, v))
     
 if __name__ == "__main__":
     G = Graphnx()
