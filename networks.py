@@ -9,6 +9,16 @@ import utils
 import random
 import ml_metrics as metrics
 
+TE_weight = 10
+
+def read_dict(fn):
+    dic = []
+    with open(fn) as fin:
+        reader = csv.reader(fin, skipinitialspace=True, quotechar="'")
+        next(reader)
+        for row in reader:
+            dic.append((row[0], row[1], TE_weight))
+    return(dic)
 
 def Graphnx(fn):
     count = 1
@@ -42,12 +52,15 @@ def Graphnx(fn):
     return G
 
 
-def get_english_digraph():
-    if os.path.isfile("./EAT/EATnew_directed"):
-        with open("./EAT/EATnew_directed") as jc:
+def get_english_digraph(lemmatized):
+    fn = "./EAT/EATnew"
+    if lemmatized:
+        fn += "Lemmas"
+    if os.path.isfile(fn+"_directed"):
+        with open(fn+"_directed") as jc:
             D = json_graph.node_link_graph(json.load(jc))
     else:
-        M = nx.read_pajek("./EAT/EATnew.net")
+        M = nx.read_pajek(fn+".net")
         D = nx.DiGraph()
         for u, v, data in M.edges_iter(data=True):
             w = data['weight'] if 'weight' in data else 1.0
@@ -55,28 +68,9 @@ def get_english_digraph():
                 D[u][v]['weight'] += w
             else:
                 D.add_edge(u.lower(), v.lower(), weight=w)
-        with open("./EAT/EATnew_directed", 'w') as outfile:
+        with open(fn+"_directed", 'w') as outfile:
             json.dump(json_graph.node_link_data(D), outfile)
     return D
-
-def get_lemmatized_english_digraph(new):
-    if os.path.isfile("./EAT/EATnew_directed") and new=="no":
-        with open("./EAT/EATnew_directed") as jc:
-            D = json_graph.node_link_graph(json.load(jc))
-    else:
-        M = nx.read_pajek("modEAT.net")
-        D = nx.DiGraph()
-        for u, v, data in M.edges_iter(data=True):
-            w = data['weight'] if 'weight' in data else 1.0
-            if D.has_edge(u, v):
-                D[u][v]['weight'] += w
-            else:
-                D.add_edge(u.lower(), v.lower(), weight=w)
-        with open("./EAT/EATnew_directed", 'w') as outfile:
-            json.dump(json_graph.node_link_data(D), outfile)
-    return D
-
-
 
 def get_dutch_digraph(lemmatized):
     fn = "./Dutch/associationData"
@@ -91,7 +85,7 @@ def get_dutch_digraph(lemmatized):
             json.dump(json_graph.node_link_data(D), outfile)
     return D
 
-def get_connections(G, responses, depth, current_depth):
+def spread_activation(G, responses, depth, current_depth):
     if current_depth > depth:
         return(responses)
     else:
@@ -103,7 +97,7 @@ def get_connections(G, responses, depth, current_depth):
             responses_single_word = {k:v/total*weight for k,v in new.items()}
             responses_current_level = dict(sum((Counter(x) for x in [responses_current_level, responses_single_word]), Counter()))
         current_depth += 1
-        responses_next_level = get_connections(G, responses_current_level, depth, current_depth)
+        responses_next_level = spread_activation(G, responses_current_level, depth, current_depth)
         final = dict(sum((Counter(x) for x in [responses_current_level, responses_next_level]), Counter()))
         return(final)
 
@@ -124,7 +118,7 @@ def test_network(D, test_list, depth, gold=None, verbose=True):
         d_gold = normalize_dict(gold_clean)
         l_gold = sorted(d_gold.items(), key=lambda x: x[1], reverse=True)
         k_gold = [pair[0] for pair in l_gold]
-        d_resp = normalize_dict(dict(get_connections(D, {w:1}, depth, current_depth=1)))
+        d_resp = normalize_dict(dict(spread_activation(D, {w:1}, depth, current_depth=1)))
         if w in d_resp:
             del d_resp[w]
         l_resp = sorted(d_resp.items(), key=lambda x: x[1], reverse=True)
@@ -189,6 +183,7 @@ if __name__ == "__main__":
 
 
     DD_DE_test_dict = read_test_file("./vanhell/DD1-DE2-DD3.csv")
+
     DD_test_list = DD_DE_test_dict['D']['D']
     gold_dict = {}
     for (c, r), f in Counter(DD_test_list).items():
@@ -196,22 +191,52 @@ if __name__ == "__main__":
             if c not in gold_dict: gold_dict[c] = []
             gold_dict[c].append((r,f))
 
-    #get_lemmatized_english_digraph("yes")
-    #enD = get_english_digraph()
-    nlD = get_dutch_digraph(lemmatized=False)
-    nlD2 = get_dutch_digraph(lemmatized=True)
+    # enD = get_english_digraph(lemmatized=True)
+    # nlD = get_dutch_digraph(lemmatized=False)
+
+    enD = get_english_digraph(lemmatized=True)
+    nlD = get_dutch_digraph(lemmatized=True)
+
+    nlD2 = get_dutch_digraph(lemmatized=False)
+
+    # en_nl_dic = read_dict("./dict/dictionary_tmp.csv")
+    #
+    # biling = nx.DiGraph()
+    # biling.add_nodes_from(nlD)
+    # biling.add_weighted_edges_from(list(nlD.edges_iter(data='weight', default=1)))
+    # biling.add_nodes_from(enD)
+    # biling.add_weighted_edges_from(list(enD.edges_iter(data='weight', default=1)))
+    #
+    # TE_edges = [t for t in en_nl_dic if t[0] in biling.nodes() and t[1] in biling.nodes()]
+    # for t in TE_edges:
+    #     TE_edges.append((t[1],t[0],t[2]))
+    #
+    # biling.add_weighted_edges_from(TE_edges)
+    #
+    # with open("biling_graph", 'w') as outfile:
+    #     json.dump(json_graph.node_link_data(biling), outfile)
+    #
+    # DE_test_list = DD_DE_test_dict['D']['E']
+    # gold_dict = {}
+    # for (c, r), f in Counter(DE_test_list).items():
+    #     if r != "":
+    #         if c not in gold_dict:
+    #             gold_dict[c] = []
+    #             gold_dict[c].append((r,f))
 
     #test_list = random.sample(sorted(gold_dict.keys()), len(gold_dict))
     test_list = sorted(gold_dict.keys())
 
-    for depth in range(1,3):
+    for depth in range(3,4):
         print("ORIG",depth)
-        test_network(nlD, test_list, depth, gold_dict, verbose=False)
-        print("LEMMAS",depth)
         test_network(nlD2, test_list, depth, gold_dict, verbose=False)
+        print("LEMMAS",depth)
+        test_network(nlD, test_list, depth, gold_dict, verbose=False)
+        # print("BILING",depth)
+        # test_network(biling, test_list, depth, gold_dict, verbose=True)
 
 
-        #test = ["skirt", "potato"]
+    #test = ["skirt", "potato"]
     #test_network_print(enD, test, 4)
 
     #test = ["oneindig", "eeuwig"]
