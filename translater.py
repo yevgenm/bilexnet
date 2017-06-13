@@ -175,8 +175,9 @@ def csvwriter():
         writer.writeheader()
         for eng in d:
             for dutch in d[eng]:
-                writer.writerow({'English': eng, 'Dutch': dutch})
-                print(eng,dutch)
+                if (  len(eng.split(' '))  <2 ) and ( len(dutch.split(' ')) <2 ):
+                    writer.writerow({'English': eng, 'Dutch': dutch})
+                    print(eng,dutch)
         
         
         
