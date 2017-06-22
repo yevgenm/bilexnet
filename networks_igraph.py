@@ -360,7 +360,7 @@ if __name__ == "__main__":
         biling = construct_bilingual_graph(en, nl, en_nl_dic, TE_weight)
 
         if 'DD' in test:
-            print("NET:%s, DEPTH:%i, TE:%i" % ("nl", depth, TE_weight))
+            print("NET:%s, DEPTH:%i, TE:%i" % ("nl", depth_baseline, TE_weight))
             tvd_base, rbd_base, apk_base = test_network(nl, test_list_DD, depth, 'DD', gold_full=gold_dict, verbose=False)
             print("NET:%s, DEPTH:%i, TE:%i" % ("bi", depth, TE_weight))
             tvd_m, rbd_m, apk_m = test_network(biling, test_list_DD, depth, 'DD', gold_full=gold_dict, verbose=False)
