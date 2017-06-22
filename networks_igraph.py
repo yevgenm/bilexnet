@@ -10,9 +10,6 @@ from scipy.stats import ttest_rel
 import numpy as np
 import pickle
 import itertools
-import copy
-
-np.random.seed(12345678)
 
 mapping = {'E': ":EN", 'D': ":NL"}
 noise_list = ["x", "", None]
@@ -49,12 +46,16 @@ def filter_test_list(G, test_list):
     return(test_list_cleaned)
 
 def construct_bilingual_graph(enG, nlG, en_nl_dic, TE_weight):
+    #coeff = 0.1
     # Constructs a bilingual graph with translation edges and pickles it. If a pickled file found, loads it instead.
     fn = "./biling_graph/biling_pickled_weight_" + str(TE_weight)
+    #fn = "./biling_graph/biling_pickled_weight_" + str(TE_weight)+"_coeff_"+coeff
     if os.path.isfile(fn):
         biling = read(fn, format="pickle")
     else:
         en_nl_tuples = [(k,v,TE_weight) for k,vs in en_nl_dic.items() for v in vs]
+        #If the link in the lev-file, multiply TE_weight by lev, otherwise multiply by 0.01.
+
         TE_edges = [t for t in en_nl_tuples if t[0] in enG.vs['name'] and t[1] in nlG.vs['name']]
         TE_edges_reversed = [(t[1],t[0],t[2]) for t in TE_edges]
         TE_edges.extend(TE_edges_reversed)
@@ -69,7 +70,7 @@ def construct_bilingual_graph(enG, nlG, en_nl_dic, TE_weight):
         weighted_edges.extend(TE_edges)
 
         biling = Graph.TupleList(edges=weighted_edges, edge_attrs="weight", directed=True)
-        biling.write_pickle("./biling_graph/biling_pickled_weight_"+str(TE_weight))
+        biling.write_pickle(fn)
     return(biling)
 
 
@@ -211,12 +212,12 @@ def spread_activation(G, responses, depth):
             new = {}
             for e in G.incident(vertex):
                 if random.random() < alpha:
-                    new[G.vs[G.es[e].tuple[1]]] = G.es[e]["weight"]
+                    new[G.vs[G.es[e].tuple[1]]['name']] = G.es[e]["weight"]
             total = sum(new.values())
             if total == 0:
                 responses_single_word = {}
             else:
-                responses_single_word = {k:v/total*weight*alpha for k,v in new.items()}
+                responses_single_word = {k:v/total*weight*alpha for k, v in new.items()}
             responses_current_level = dict(sum((Counter(x) for x in [responses_current_level, responses_single_word]), Counter()))
         if not responses_current_level:
             return({})
@@ -235,8 +236,8 @@ def spread_activation_plot(G, responses, G_sub, depth):
             weight = responses[vertex]
             new = {}
             for e in G.incident(vertex):
-                if random.random() < alpha:
-                    new[G.vs[G.es[e].tuple[1]]] = G.es[e]["weight"]
+                #if random.random() < alpha:
+                new[G.vs[G.es[e].tuple[1]]] = G.es[e]["weight"]
             total = sum(new.values())
             if total == 0:
                 responses_single_word = {}
@@ -245,11 +246,11 @@ def spread_activation_plot(G, responses, G_sub, depth):
                 for resp,wei in new.items():
                     if resp not in G_sub.vs['name']:
                         G_sub.add_vertex(name=resp['name'])
-                    e = G_sub.get_eid(G_sub.vs.find(name=vertex['name']), G_sub.vs.find(name=resp['name']), directed=True, error=False)
+                    e = G_sub.get_eid(G_sub.vs.find(name=vertex), G_sub.vs.find(name=resp), directed=True, error=False)
                     if e != -1:
                         G_sub.es[e]['weight'] += wei
                     else:
-                        G_sub.add_edge(vertex['name'],resp['name'],weight=wei)
+                        G_sub.add_edge(vertex,resp,weight=wei)
             responses_current_level = dict(sum((Counter(x) for x in [responses_current_level, responses_single_word]), Counter()))
         if not responses_current_level:
             return({}, G_sub)
@@ -292,8 +293,10 @@ def test_network(D, test_list, depth, direction, translation_dict=None, gold_ful
         d_gold = normalize_dict(gold_clean)
         l_gold = sorted(d_gold.items(), key=lambda x: (-x[1],x[0]))
         k_gold = [pair[0] for pair in l_gold]
-        starting_vertex = {D.vs.find(name=w): 1}
-        responses = {vx['name']: wgt for vx, wgt in spread_activation(D, starting_vertex, depth).items()}
+        #starting_vertex = {D.vs.find(name=w): 1.0}
+        starting_vertex = {w: 1.0}
+        #responses = {vx['name']: wgt for vx, wgt in spread_activation(D, starting_vertex, depth).items()}
+        responses = spread_activation(D, starting_vertex, depth)
         if w in responses:
             del responses[w]
         if stimulus_lang != response_lang:
@@ -310,10 +313,10 @@ def test_network(D, test_list, depth, direction, translation_dict=None, gold_ful
             print("\tCUE:",w)
             if gold:
                 print("\t\tGOLD")
-                for k, v in l_gold[:10]:
+                for k, v in l_gold[:5]:
                     print("\t\t\t%s\t\t%.3f" % (k, v))
             print("\t\tMAX DEPTH:", depth)
-            for k,v in l_resp[:10]:
+            for k,v in l_resp[:5]:
                 print("\t\t\t%s\t\t%.10f" % (k, v))
         if gold:
             apk_k = len(gold_clean)
@@ -357,7 +360,7 @@ if __name__ == "__main__":
     #test = ['DD', 'EE', 'DE']
     test = ['EE']
 
-    depth_baseline = 1
+    depth_baseline = 2
     depth = 2
     for TE_weight in [1]:
 
@@ -377,7 +380,6 @@ if __name__ == "__main__":
             tvd_base, rbd_base, apk_base = test_network(en, test_list_EE, depth_baseline, 'EE', gold_full=gold_dict, verbose=True)
             print("NET:%s, DEPTH:%i, TE:%i" % ("bi", depth, TE_weight))
             tvd_m, rbd_m, apk_m = test_network(biling, test_list_EE, depth, 'EE', gold_full=gold_dict, verbose=True)
-            #tvd_m, rbd_m, apk_m = test_network(en, test_list_EE, depth, 'EE', gold_full=gold_dict, verbose=True)
             print("TVD t-test: T=%.2f, p=%.3f" % (ttest_rel(tvd_base, tvd_m)[0], ttest_rel(tvd_base, tvd_m)[1]))
             print("RBD t-test: T=%.2f, p=%.3f" % (ttest_rel(rbd_base, rbd_m)[0], ttest_rel(rbd_base, rbd_m)[1]))
             print("APK t-test: T=%.2f, p=%.3f" % (ttest_rel(apk_base, apk_m)[0], ttest_rel(apk_base, apk_m)[1]))
