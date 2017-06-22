@@ -201,7 +201,7 @@ def get_graph(fn, language):
 def spread_activation(G, responses, depth):
     # Main function that spreads the activation starting from the given node(s) and returns a dictionary of responses with their (non-normalized) likelihoods.
     if depth == 0:
-        return(responses)
+        return({})
     else:
         responses_current_level = dict()
         for vertex in sorted(responses):
@@ -283,12 +283,11 @@ def test_network(D, test_list, depth, direction, translation_dict=None, gold_ful
     tvd = 0
     rbd = 0
     apk = 0
-    apk_k = 100
     for w in test_list:
         gold_local = dict(gold[w])
-        gold_clean = {k:v for k,v in gold_local.items() if gold_local[k] > 0}
+        gold_clean = {k:v for k,v in gold_local.items() if gold_local[k] > 1}
         d_gold = normalize_dict(gold_clean)
-        l_gold = sorted(d_gold.items(), key=lambda x: x[1], reverse=True)
+        l_gold = sorted(d_gold.items(), key=lambda x: (-x[1],x[0]))
         k_gold = [pair[0] for pair in l_gold]
         starting_vertex = {D.vs.find(name=w): 1}
         responses = {vx['name']: wgt for vx, wgt in spread_activation(D, starting_vertex, depth).items()}
@@ -301,7 +300,7 @@ def test_network(D, test_list, depth, direction, translation_dict=None, gold_ful
                         del responses[trnsl]
         responses_clean = {r: p for r, p in responses.items() if r[-3:]==response_lang}
         d_resp = normalize_dict(responses_clean)
-        l_resp = sorted(d_resp.items(), key=lambda x: x[1], reverse=True)
+        l_resp = sorted(d_resp.items(), key=lambda x: (-x[1],x[0]))
         k_resp = [pair[0] for pair in l_resp]
         if verbose:
             print("\tCUE:",w)
@@ -311,17 +310,18 @@ def test_network(D, test_list, depth, direction, translation_dict=None, gold_ful
                     print("\t\t\t%s\t\t%.3f" % (k, v))
             print("\t\tMAX DEPTH:", depth)
             for k,v in l_resp[:10]:
-                print("\t\t\t%s\t\t%.3f" % (k, v))
+                print("\t\t\t%s\t\t%.10f" % (k, v))
         if gold:
+            apk_k = len(gold_clean)
             tvd_w = 0.5 * sum(abs((d_gold.get(resp) or 0) - (d_resp.get(resp) or 0)) for resp in set(d_gold) | set(d_resp))
             rbd_w = utils.get_rbd(k_gold, k_resp)
             apk_w = 1-metrics.apk(k_gold, k_resp, apk_k)
             tvd += tvd_w
             rbd += rbd_w
             apk += apk_w
-            print("\t\tTVD:", tvd_w)
-            print("\t\tRBD:", rbd_w)
-            print("\t\tAPK:", apk_w)
+            #print("\t\tTVD:", tvd_w)
+            #print("\t\tRBD:", rbd_w)
+            #print("\t\tAPK:", apk_w)
             tvds.append(tvd_w)
             rbds.append(rbd_w)
             apks.append(apk_w)
@@ -331,7 +331,7 @@ def test_network(D, test_list, depth, direction, translation_dict=None, gold_ful
         apk /= len(test_list)
         print("\tTotal variation distance :", tvd)
         print("\tRank-biased distance :", rbd)
-        print("\tAverage precision (distance) at", apk_k, ":", apk)
+        print("\tAverage precision (distance) :", apk)
     return (tvds, rbds, apks)
 
 
@@ -340,8 +340,8 @@ if __name__ == "__main__":
     en_nl_dic = read_dict("./dict/dictionary.csv")
     nl_en_dic = invert_dict(en_nl_dic)
 
-    en = get_graph(fn="./EAT/EATLemmas.net", language="en")
-    nl = get_graph(fn="./Dutch/associationDataLemmas.csv", language="nl")
+    en = get_graph(fn="./EAT/shrunkEAT.net", language="en")
+    nl = get_graph(fn="./Dutch/shrunkdutch2.csv", language="nl")
 
     gold_dict = read_test_data()
 
@@ -354,7 +354,7 @@ if __name__ == "__main__":
     test = ['EE']
 
     depth_baseline = 1
-    depth = 2
+    depth = 1
     for TE_weight in [1]:
 
         biling = construct_bilingual_graph(en, nl, en_nl_dic, TE_weight)
@@ -370,9 +370,10 @@ if __name__ == "__main__":
 
         if 'EE' in test:
             print("NET:%s, DEPTH:%i, TE:%i" % ("en", depth_baseline, TE_weight))
-            tvd_base, rbd_base, apk_base = test_network(en, test_list_EE, depth_baseline, 'EE', gold_full=gold_dict, verbose=True)
+            tvd_base, rbd_base, apk_base = test_network(en, test_list_EE, depth_baseline, 'EE', gold_full=gold_dict, verbose=False)
             print("NET:%s, DEPTH:%i, TE:%i" % ("bi", depth, TE_weight))
-            tvd_m, rbd_m, apk_m = test_network(biling, test_list_EE, depth, 'EE', gold_full=gold_dict, verbose=True)
+            tvd_m, rbd_m, apk_m = test_network(biling, test_list_EE, depth, 'EE', gold_full=gold_dict, verbose=False)
+            #tvd_m, rbd_m, apk_m = test_network(en, test_list_EE, depth, 'EE', gold_full=gold_dict, verbose=True)
             print("TVD t-test: T=%.2f, p=%.3f" % (ttest_rel(tvd_base, tvd_m)[0], ttest_rel(tvd_base, tvd_m)[1]))
             print("RBD t-test: T=%.2f, p=%.3f" % (ttest_rel(rbd_base, rbd_m)[0], ttest_rel(rbd_base, rbd_m)[1]))
             print("APK t-test: T=%.2f, p=%.3f" % (ttest_rel(apk_base, apk_m)[0], ttest_rel(apk_base, apk_m)[1]))
@@ -388,3 +389,4 @@ if __name__ == "__main__":
         # plot_list = ["captain:EN"]
         # for w in plot_list:
         #     plot_subgraph(biling,w,2, "biling")
+
