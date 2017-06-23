@@ -44,16 +44,43 @@ def filter_test_list(G, test_list):
     test_list_cleaned = [w for w in test_list if w in G.vs['name']]
     test_list_cleaned = [w for w in test_list_cleaned if G.incident(w)]
     return(test_list_cleaned)
-
+#########################
+def levLoader():
+    fil = open("/Users/amirardalankalantaridehgahi/Desktop/school/stevensonRA/clone/bilexnet/levdist.csv" ,"r") 
+    l = fil.readlines()
+    l = l[1:]
+    d = {}
+    for lin in l:
+        w = lin.split(",")
+        #print(w)
+        d[w[0]+':'+w[1]] = float(w[2].strip('\n').strip('\r'))
+    return d
+#########################
 def construct_bilingual_graph(enG, nlG, en_nl_dic, TE_weight):
-    #coeff = 0.1
+    count = 0
+    coeff = 0.1
     # Constructs a bilingual graph with translation edges and pickles it. If a pickled file found, loads it instead.
-    fn = "./biling_graph/biling_pickled_weight_" + str(TE_weight)
-    #fn = "./biling_graph/biling_pickled_weight_" + str(TE_weight)+"_coeff_"+coeff
-    if os.path.isfile(fn):
+    #fn = "./biling_graph/biling_pickled_weight_" + str(TE_weight)
+    fn = "./biling_graph/biling_pickled_weight_" + str(TE_weight)+"_coeff_"+str(coeff)
+    if False:#os.path.isfile(fn):
         biling = read(fn, format="pickle")
     else:
-        en_nl_tuples = [(k,v,TE_weight) for k,vs in en_nl_dic.items() for v in vs]
+        lev = levLoader()
+        en_nl_tuple = [(k,v,TE_weight) for k,vs in en_nl_dic.items() for v in vs]
+        en_nl_tuples = []
+        
+        for tup in en_nl_tuple:
+            if tup[0].strip(':EN') + ':' + tup[1].strip(':NL') in lev:
+                en_nl_tuples.append( (tup[0],tup[1], tup[2]* lev[tup[0].strip(':EN') + ':' + tup[1].strip(':NL')])  )
+                #print(tup)
+                count = count + 1
+                #raw_input()
+                
+            else:
+                en_nl_tuples.append( (tup[0],tup[1],tup[2]*coeff)  )
+        
+        #print(en_nl_tuples, count,len(en_nl_tuples))
+        #raw_input()
         #If the link in the lev-file, multiply TE_weight by lev, otherwise multiply by 0.01.
 
         TE_edges = [t for t in en_nl_tuples if t[0] in enG.vs['name'] and t[1] in nlG.vs['name']]
