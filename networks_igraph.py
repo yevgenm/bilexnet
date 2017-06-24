@@ -8,6 +8,7 @@ import ml_metrics as metrics
 import random
 from scipy.stats import ttest_rel
 import numpy as np
+from pajek_converter import convert_pajek
 import pickle
 import itertools
 
@@ -17,15 +18,27 @@ alpha = 1
 
 def plot_subgraph(plot_graph, w, depth, name):
     # Traverses the graph for a given word and plots the resulting subgraph into a file. Needs to be tested.
-    starting_vertex = {plot_graph.vs.find(name=w): 1}
+    starting_vertex = {w: 1}
     G_sub = Graph(directed=True)
     G_sub.add_vertices(w)
     G_sub.vs["name"] = [w]
     responses, G_sub = spread_activation_plot(plot_graph, starting_vertex, G_sub, depth)
+    adj_table = np.array([[0],[0]])
+    word_ids = {w:0, 0:w}
+    es_to_delete = []
+    #for e in G_sub.es:
+    #    if e['weight'] < 0.001:
+    #        es_to_delete.append(e.index)
+    #G_sub.delete_edges(es_to_delete)
+    #vs_to_delete = []
+    #for v in G_sub.vs:
+    #    if len(G_sub.incident(v)) == 0:
+    #        vs_to_delete.append(v.index)
+    #G_sub.delete_vertices(vs_to_delete)
     visual_style = {}
     visual_style["vertex_size"] = 10
     visual_style["vertex_label"] = G_sub.vs["name"]
-    visual_style["edge_width"] = G_sub.es['weight']
+    visual_style["edge_width"] = [x*50 for x in G_sub.es['weight']]
     visual_style["bbox"] = (1000, 1000)
     visual_style["margin"] = 20
     plot(G_sub, w + "_"+ name + ".svg", **visual_style)
@@ -45,7 +58,7 @@ def filter_test_list(G, test_list):
     test_list_cleaned = [w for w in test_list_cleaned if G.incident(w)]
     return(test_list_cleaned)
 
-def construct_bilingual_graph(enG, nlG, en_nl_dic, TE_weight):
+def construct_bilingual_graph(fn_en, fn_nl, en_nl_dic, TE_weight):
     #coeff = 0.1
     # Constructs a bilingual graph with translation edges and pickles it. If a pickled file found, loads it instead.
     fn = "./biling_graph/biling_pickled_weight_" + str(TE_weight)
@@ -53,20 +66,36 @@ def construct_bilingual_graph(enG, nlG, en_nl_dic, TE_weight):
     if os.path.isfile(fn):
         biling = read(fn, format="pickle")
     else:
+        df_nl = pandas.read_csv(fn_nl, sep=";", na_values="", keep_default_na=False)
+        edges = Counter()
+        for i in range(1, 4):
+            edges.update(zip(df_nl['cue'], df_nl['asso' + str(i)]))
+        weighted_edges_nl = [(e[0][0] + ":NL", e[0][1] + ":NL", e[1]) for e in edges.items() if e[0][1] not in
+                            noise_list]
+        vertices_nl = [word+":NL" for word in set.union(set(df_nl['cue']), set(df_nl['asso1']), set(df_nl['asso2']),
+                                                  set(df_nl['asso3']))]
+
+        df_en = pandas.read_csv(fn_en+"_plain", sep=";", na_values="", keep_default_na=False)
+        edges = Counter()
+        for i in range(1, 4):
+            edges.update(zip(df_en['cue'], df_en['asso' + str(i)]))
+        weighted_edges_en = [(e[0][0] + ":EN", e[0][1] + ":EN", e[1]) for e in edges.items() if e[0][1] not in
+                            noise_list]
+        vertices_en = [word+":EN" for word in set.union(set(df_en['cue']), set(df_en['asso1']), set(df_en['asso2']),
+                                                  set(df_en['asso3']))]
+
         en_nl_tuples = [(k,v,TE_weight) for k,vs in en_nl_dic.items() for v in vs]
         #If the link in the lev-file, multiply TE_weight by lev, otherwise multiply by 0.01.
 
-        TE_edges = [t for t in en_nl_tuples if t[0] in enG.vs['name'] and t[1] in nlG.vs['name']]
+        TE_edges = [t for t in en_nl_tuples if t[0] in vertices_en and t[1] in vertices_nl]
         TE_edges_reversed = [(t[1],t[0],t[2]) for t in TE_edges]
         TE_edges.extend(TE_edges_reversed)
 
-        df = pandas.read_csv("./Dutch/associationDataLemmas.csv", sep=";")
-        edges = Counter()
-        for i in range(1, 4):
-            edges.update(zip(df['cue'], df['asso' + str(i)]))
-        weighted_edges = [(e[0][0] + ":NL", e[0][1] + ":NL", e[1]) for e in edges.items() if e[0][1] not in noise_list]
-
-        weighted_edges.extend([(enG.vs['name'][e.tuple[0]], enG.vs['name'][e.tuple[1]], e.attributes()['weight']) for e in enG.es if enG.vs['name'][e.tuple[1]] not in noise_list])
+        #weighted_edges.extend([(enG.vs['name'][e.tuple[0]], enG.vs['name'][e.tuple[1]], e.attributes()['weight'])
+        # for e in enG.es if enG.vs['name'][e.tuple[1]] not in noise_list])
+        weighted_edges = []
+        weighted_edges.extend(weighted_edges_en)
+        weighted_edges.extend(weighted_edges_nl)
         weighted_edges.extend(TE_edges)
 
         biling = Graph.TupleList(edges=weighted_edges, edge_attrs="weight", directed=True)
@@ -166,13 +195,13 @@ def read_dict(fn):
             dic[source].append(transl)
     return (dic)
 
-def construct_igraph(fn):
-    # Constructs the big (Dutch) graph from CSV.
-    df = pandas.read_csv(fn, sep=";")
+def construct_igraph(fn, lang):
+    # Constructs the big graph from CSV.
+    df = pandas.read_csv(fn, sep=";", na_values="", keep_default_na=False)
     edges = Counter()
     for i in range(1,4):
         edges.update(zip(df['cue'], df['asso'+str(i)]))
-    weighted_edges = [(e[0][0]+":NL",e[0][1]+":NL",e[1]) for e in edges.items() if e[0][1] not in noise_list]
+    weighted_edges = [(e[0][0]+":"+lang, e[0][1]+":"+lang,e[1]) for e in edges.items() if e[0][1] not in noise_list]
     G = Graph.TupleList(edges=weighted_edges, edge_attrs="weight", directed=True)
     return G
 
@@ -194,10 +223,13 @@ def get_graph(fn, language):
         D = read(fn+"_pickled", format="pickle")
     else:
         if language=="nl":
-            D = construct_igraph(fn)
+            D = construct_igraph(fn, "NL")
         elif language=="en":
-            D = read(fn, format="pajek")
-            D = clean_igraph(D)
+            if not os.path.isfile(fn+"_plain"):
+                convert_pajek(fn)
+            D = construct_igraph(fn+"_plain", "EN")
+            #D = read(fn, format="pajek")
+            #D = clean_igraph(D)
         D.write_pickle(fn+"_pickled")
     return D
 
@@ -237,20 +269,21 @@ def spread_activation_plot(G, responses, G_sub, depth):
             new = {}
             for e in G.incident(vertex):
                 #if random.random() < alpha:
-                new[G.vs[G.es[e].tuple[1]]] = G.es[e]["weight"]
+                new[G.vs[G.es[e].tuple[1]]['name']] = G.es[e]["weight"]
             total = sum(new.values())
             if total == 0:
                 responses_single_word = {}
             else:
                 responses_single_word = {k:v/total*weight*alpha for k,v in new.items()}
-                for resp,wei in new.items():
-                    if resp not in G_sub.vs['name']:
-                        G_sub.add_vertex(name=resp['name'])
-                    e = G_sub.get_eid(G_sub.vs.find(name=vertex), G_sub.vs.find(name=resp), directed=True, error=False)
-                    if e != -1:
-                        G_sub.es[e]['weight'] += wei
-                    else:
-                        G_sub.add_edge(vertex,resp,weight=wei)
+                for resp,wei in responses_single_word.items():
+                    if wei > 0.005:
+                        if resp not in G_sub.vs['name']:
+                            G_sub.add_vertex(name=resp)
+                        e = G_sub.get_eid(G_sub.vs.find(name=vertex), G_sub.vs.find(name=resp), directed=True, error=False)
+                        if e != -1:
+                            G_sub.es[e]['weight'] += wei
+                        else:
+                            G_sub.add_edge(vertex,resp,weight=wei)
             responses_current_level = dict(sum((Counter(x) for x in [responses_current_level, responses_single_word]), Counter()))
         if not responses_current_level:
             return({}, G_sub)
@@ -326,9 +359,9 @@ def test_network(D, test_list, depth, direction, translation_dict=None, gold_ful
             tvd += tvd_w
             rbd += rbd_w
             apk += apk_w
-            #print("\t\tTVD:", tvd_w)
-            #print("\t\tRBD:", rbd_w)
-            #print("\t\tAPK:", apk_w)
+            print("\t\tTVD:", tvd_w)
+            print("\t\tRBD:", rbd_w)
+            print("\t\tAPK:", apk_w)
             tvds.append(tvd_w)
             rbds.append(rbd_w)
             apks.append(apk_w)
@@ -344,11 +377,14 @@ def test_network(D, test_list, depth, direction, translation_dict=None, gold_ful
 
 if __name__ == "__main__":
 
+    fn_en = "./EAT/shrunkEAT.net"
+    fn_nl = "./Dutch/shrunkdutch2.csv"
+
     en_nl_dic = read_dict("./dict/dictionary.csv")
     nl_en_dic = invert_dict(en_nl_dic)
 
-    en = get_graph(fn="./EAT/shrunkEAT.net", language="en")
-    nl = get_graph(fn="./Dutch/shrunkdutch2.csv", language="nl")
+    en = get_graph(fn=fn_en, language="en")
+    nl = get_graph(fn=fn_nl, language="nl")
 
     gold_dict = read_test_data()
 
@@ -360,11 +396,11 @@ if __name__ == "__main__":
     #test = ['DD', 'EE', 'DE']
     test = ['EE']
 
-    depth_baseline = 2
-    depth = 2
-    for TE_weight in [1]:
+    depth_baseline = 3
+    depth = 3
+    for TE_weight in [5,10,50,100]:
 
-        biling = construct_bilingual_graph(en, nl, en_nl_dic, TE_weight)
+        biling = construct_bilingual_graph(fn_en, fn_nl, en_nl_dic, TE_weight)
 
         if 'DD' in test:
             print("NET:%s, DEPTH:%i, TE:%i" % ("nl", depth_baseline, TE_weight))
@@ -392,7 +428,7 @@ if __name__ == "__main__":
             print("NET:%s, DEPTH:%i, TE:%i" % ("bi", depth, TE_weight))
             tvd, rbd, apk = test_network(biling, test_list_ED, depth, 'ED', en_nl_dic, gold_full=gold_dict, verbose=False)
 
-        # plot_list = ["captain:EN"]
+        # plot_list = ["climb:EN"]
         # for w in plot_list:
-        #     plot_subgraph(biling,w,2, "biling")
-
+        #     plot_subgraph(en, w, 2, "en")
+        #     plot_subgraph(biling, w, 2, "biling")
