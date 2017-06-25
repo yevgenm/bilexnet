@@ -11,10 +11,42 @@ import numpy as np
 from pajek_converter import convert_pajek
 import pickle
 import itertools
+import copy
 
 mapping = {'E': ":EN", 'D': ":NL"}
 noise_list = ["x", "", None]
 alpha = 1
+
+# def normalize_graph(G):
+#     for v in G.vs:
+#         total = sum(G.es[G.incident(v, mode=OUT)]["weight"])
+#         G.es[G.incident(v)]["weight"] = list(np.array(G.es[G.incident(v)]["weight"])/total)
+#     return G
+
+def normalize_tuple_list(l, weight):
+    # Given a list of tuples (word1, word2, weight), normalizes all weights, so that all edges outgoing from each word add up to the value of weight.
+    connections = {}
+    for (w1, w2, c) in l:
+        if w1 not in connections:
+            connections[w1] = 0
+        connections[w1] += c
+    for idx in range(len(l)):
+        w1 = l[idx][0]
+        w2 = l[idx][1]
+        c = l[idx][2]
+        l[idx] = (w1, w2, weight*c/connections[w1])
+    return l
+
+def normalize_tuple_dict(d, weight):
+    # Given a dictionary {(word1, word2): weight}, normalizes all weights, so that all edges outgoing from each word add up to the value of weight.
+    connections = {}
+    for (w1, w2), c in d.items():
+        if w1 not in connections:
+            connections[w1] = 0
+        connections[w1] += c
+    for (w1, w2), c in d.items():
+        d[(w1, w2)] = weight*c/connections[w1]
+    return d
 
 def plot_subgraph(plot_graph, w, depth, name):
     # Traverses the graph for a given word and plots the resulting subgraph into a file. Needs to be tested.
@@ -23,18 +55,6 @@ def plot_subgraph(plot_graph, w, depth, name):
     G_sub.add_vertices(w)
     G_sub.vs["name"] = [w]
     responses, G_sub = spread_activation_plot(plot_graph, starting_vertex, G_sub, depth)
-    adj_table = np.array([[0],[0]])
-    word_ids = {w:0, 0:w}
-    es_to_delete = []
-    #for e in G_sub.es:
-    #    if e['weight'] < 0.001:
-    #        es_to_delete.append(e.index)
-    #G_sub.delete_edges(es_to_delete)
-    #vs_to_delete = []
-    #for v in G_sub.vs:
-    #    if len(G_sub.incident(v)) == 0:
-    #        vs_to_delete.append(v.index)
-    #G_sub.delete_vertices(vs_to_delete)
     visual_style = {}
     visual_style["vertex_size"] = 10
     visual_style["vertex_label"] = G_sub.vs["name"]
@@ -58,23 +78,23 @@ def filter_test_list(G, test_list):
     test_list_cleaned = [w for w in test_list_cleaned if G.incident(w)]
     return(test_list_cleaned)
 
-def levLoader():
-    fil = open("/Users/amirardalankalantaridehgahi/Desktop/school/stevensonRA/clone/bilexnet/levdist.csv" ,"r") 
+def levLoader(theta):
+    # Reads the files with orthographic similarities and returns a dictionary {(word1, word2): sim}
+    fil = open("./levdist.csv" ,"r")
     l = fil.readlines()
     l = l[1:]
     d = {}
     for lin in l:
         w = lin.split(",")
         #print(w)
-        d[w[0]+':'+w[1]] = float(w[2].strip('\n').strip('\r'))
+        sim = float(w[2].strip('\n').strip('\r'))
+        if sim >= theta:
+            d[(w[0]+":EN", w[1]+":NL")] = sim
     return d
 
-def construct_bilingual_graph(fn_en, fn_nl, en_nl_dic, TE_weight):
-    # Constructs a bilingual graph with translation edges and pickles it. If a pickled file found, loads it instead.
-    count = 0
-    coeff = 0.1
-    #fn = "./biling_graph/biling_pickled_weight_" + str(TE_weight)
-    fn = "./biling_graph/biling_pickled_weight_" + str(TE_weight)+"_coeff_"+str(coeff)
+def construct_bilingual_graph(fn_en, fn_nl, en_nl_dic, theta, TE_assoc_ratio, orth_assoc_ratio):
+    # Constructs a bilingual graph with various edges and pickles it. If a pickled file found, loads it instead.
+    fn = "./biling_graph/biling_pickled_TE_" + str(TE_assoc_ratio)+"_orth_"+str(orth_assoc_ratio)
     if os.path.isfile(fn):
         biling = read(fn, format="pickle")
     else:
@@ -96,32 +116,41 @@ def construct_bilingual_graph(fn_en, fn_nl, en_nl_dic, TE_weight):
         vertices_en = [word+":EN" for word in set.union(set(df_en['cue']), set(df_en['asso1']), set(df_en['asso2']),
                                                   set(df_en['asso3']))]
 
-        lev = levLoader()
-        en_nl_tuple = [(k,v,TE_weight) for k,vs in en_nl_dic.items() for v in vs]
-        en_nl_tuples = []
+        TE_all = {(k, v): TE_assoc_ratio for k, vs in en_nl_dic.items() for v in vs}
+
+        lev = levLoader(theta)
+        lev_edges_en_nl = {k:v for k,v in lev.items() if k[0] in vertices_en and k[1] in vertices_nl}
+        lev_edges_nl_en = {(k[1], k[0]): v for k,v in lev_edges_en_nl.items()}
+        lev_edges = copy.copy(lev_edges_en_nl)
+        lev_edges.update(lev_edges_nl_en)
+        lev_edges = normalize_tuple_dict(lev_edges, orth_assoc_ratio)
+
+        # en_nl_tuples = []
+        # for tup in TE_tuples:
+        #     if (tup[0].strip(':EN'), tup[1].strip(':NL')) in lev:
+        #         en_nl_tuples.append( (tup[0],tup[1], tup[2]* lev[(tup[0].strip(':EN'), tup[1].strip(':NL'))])  )
+        #         count = count + 1
+        #     else:
+        #         en_nl_tuples.append( (tup[0],tup[1],tup[2]*orth_coeff)  )
         
-        for tup in en_nl_tuple:
-            if tup[0].strip(':EN') + ':' + tup[1].strip(':NL') in lev:
-                en_nl_tuples.append( (tup[0],tup[1], tup[2]* lev[tup[0].strip(':EN') + ':' + tup[1].strip(':NL')])  )
-                #print(tup)
-                count = count + 1
-                #raw_input()
-                
-            else:
-                en_nl_tuples.append( (tup[0],tup[1],tup[2]*coeff)  )
-        
-        TE_edges = [t for t in en_nl_tuples if t[0] in vertices_en and t[1] in vertices_nl]
-        TE_edges_reversed = [(t[1],t[0],t[2]) for t in TE_edges]
-        TE_edges.extend(TE_edges_reversed)
+        TE_edges_en_nl = {k:v for k,v in TE_all.items() if k[0] in vertices_en and k[1] in vertices_nl}
+        TE_edges_nl_en = {(k[1], k[0]): v for k,v in TE_edges_en_nl.items()}
+        TE_edges = copy.copy(TE_edges_en_nl)
+        TE_edges.update(TE_edges_nl_en)
+        TE_edges = normalize_tuple_dict(TE_edges, TE_assoc_ratio)
+
+        crossling_edges = [(k[0], k[1], v) for k, v in (Counter(TE_edges) + Counter(lev_edges)).items()]
 
         #weighted_edges.extend([(enG.vs['name'][e.tuple[0]], enG.vs['name'][e.tuple[1]], e.attributes()['weight'])
         # for e in enG.es if enG.vs['name'][e.tuple[1]] not in noise_list])
         weighted_edges = []
         weighted_edges.extend(weighted_edges_en)
         weighted_edges.extend(weighted_edges_nl)
-        weighted_edges.extend(TE_edges)
+        weighted_edges.extend(crossling_edges)
+        weighted_edges = normalize_tuple_list(weighted_edges, 1)
 
         biling = Graph.TupleList(edges=weighted_edges, edge_attrs="weight", directed=True)
+        #biling = normalize_graph(biling)
         biling.write_pickle(fn)
     return(biling)
 
@@ -225,6 +254,7 @@ def construct_igraph(fn, lang):
     for i in range(1,4):
         edges.update(zip(df['cue'], df['asso'+str(i)]))
     weighted_edges = [(e[0][0]+":"+lang, e[0][1]+":"+lang,e[1]) for e in edges.items() if e[0][1] not in noise_list]
+    weighted_edges = normalize_tuple_list(weighted_edges, 1)
     G = Graph.TupleList(edges=weighted_edges, edge_attrs="weight", directed=True)
     return G
 
@@ -247,10 +277,12 @@ def get_graph(fn, language):
     else:
         if language=="nl":
             D = construct_igraph(fn, "NL")
+            #D = normalize_graph(D)
         elif language=="en":
             if not os.path.isfile(fn+"_plain"):
                 convert_pajek(fn)
             D = construct_igraph(fn+"_plain", "EN")
+            #D = normalize_graph(D)
             #D = read(fn, format="pajek")
             #D = clean_igraph(D)
         D.write_pickle(fn+"_pickled")
@@ -421,34 +453,37 @@ if __name__ == "__main__":
 
     depth_baseline = 3
     depth = 3
-    for TE_weight in [5,10,50,100]:
+    levenshtein_theta = 0.8
 
-        biling = construct_bilingual_graph(fn_en, fn_nl, en_nl_dic, TE_weight)
+    for (TE_assoc_ratio, orth_assoc_ratio) in [(1, 1), (2, 1), (1, 2), (3, 1), (3, 1), (10, 1), (1, 10), (5, 10),
+                                               (10, 5)]:
+
+        biling = construct_bilingual_graph(fn_en, fn_nl, en_nl_dic, levenshtein_theta, TE_assoc_ratio, orth_assoc_ratio)
 
         if 'DD' in test:
-            print("NET:%s, DEPTH:%i, TE:%i" % ("nl", depth_baseline, TE_weight))
+            print("NET:%s, DEPTH:%i, TE:%i, ORTH:%i" % ("nl", depth_baseline, TE_assoc_ratio, orth_assoc_ratio))
             tvd_base, rbd_base, apk_base = test_network(nl, test_list_DD, depth, 'DD', gold_full=gold_dict, verbose=False)
-            print("NET:%s, DEPTH:%i, TE:%i" % ("bi", depth, TE_weight))
+            print("NET:%s, DEPTH:%i, TE:%i, ORTH:%i" % ("bi", depth, TE_assoc_ratio, orth_assoc_ratio))
             tvd_m, rbd_m, apk_m = test_network(biling, test_list_DD, depth, 'DD', gold_full=gold_dict, verbose=False)
             print("TVD t-test: T=%.2f, p=%.3f" % (ttest_rel(tvd_base, tvd_m)[0], ttest_rel(tvd_base, tvd_m)[1]))
             print("RBD t-test: T=%.2f, p=%.3f" % (ttest_rel(rbd_base, rbd_m)[0], ttest_rel(rbd_base, rbd_m)[1]))
             print("APK t-test: T=%.2f, p=%.3f" % (ttest_rel(apk_base, apk_m)[0], ttest_rel(apk_base, apk_m)[1]))
 
         if 'EE' in test:
-            print("NET:%s, DEPTH:%i, TE:%i" % ("en", depth_baseline, TE_weight))
+            print("NET:%s, DEPTH:%i, TE:%i, ORTH:%i" % ("en", depth_baseline, TE_assoc_ratio, orth_assoc_ratio))
             tvd_base, rbd_base, apk_base = test_network(en, test_list_EE, depth_baseline, 'EE', gold_full=gold_dict, verbose=True)
-            print("NET:%s, DEPTH:%i, TE:%i" % ("bi", depth, TE_weight))
+            print("NET:%s, DEPTH:%i, TE:%i, ORTH:%i" % ("bi", depth, TE_assoc_ratio, orth_assoc_ratio))
             tvd_m, rbd_m, apk_m = test_network(biling, test_list_EE, depth, 'EE', gold_full=gold_dict, verbose=True)
             print("TVD t-test: T=%.2f, p=%.3f" % (ttest_rel(tvd_base, tvd_m)[0], ttest_rel(tvd_base, tvd_m)[1]))
             print("RBD t-test: T=%.2f, p=%.3f" % (ttest_rel(rbd_base, rbd_m)[0], ttest_rel(rbd_base, rbd_m)[1]))
             print("APK t-test: T=%.2f, p=%.3f" % (ttest_rel(apk_base, apk_m)[0], ttest_rel(apk_base, apk_m)[1]))
 
         if 'DE' in test:
-            print("NET:%s, DEPTH:%i, TE:%i" % ("bi", depth, TE_weight))
+            print("NET:%s, DEPTH:%i, TE:%i, ORTH:%i" % ("bi", depth, TE_assoc_ratio, orth_assoc_ratio))
             tvd, rbd, apk = test_network(biling, test_list_DE, depth, 'DE', nl_en_dic, gold_full=gold_dict, verbose=False)
 
         if 'ED' in test:
-            print("NET:%s, DEPTH:%i, TE:%i" % ("bi", depth, TE_weight))
+            print("NET:%s, DEPTH:%i, TE:%i, ORTH:%i" % ("bi", depth, TE_assoc_ratio, orth_assoc_ratio))
             tvd, rbd, apk = test_network(biling, test_list_ED, depth, 'ED', en_nl_dic, gold_full=gold_dict, verbose=False)
 
         # plot_list = ["climb:EN"]
