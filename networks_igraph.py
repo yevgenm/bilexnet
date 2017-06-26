@@ -134,10 +134,12 @@ def construct_bilingual_graph(fn_en, fn_nl, en_nl_dic, theta, TE_assoc_ratio, or
         #         en_nl_tuples.append( (tup[0],tup[1],tup[2]*orth_coeff)  )
         
         TE_edges_en_nl = {k:v for k,v in TE_all.items() if k[0] in vertices_en and k[1] in vertices_nl}
+        # normalize en_nl to 2
         TE_edges_nl_en = {(k[1], k[0]): v for k,v in TE_edges_en_nl.items()}
+        # normalize nl_en to 1
         TE_edges = copy.copy(TE_edges_en_nl)
         TE_edges.update(TE_edges_nl_en)
-        TE_edges = normalize_tuple_dict(TE_edges, TE_assoc_ratio)
+        #TE_edges = normalize_tuple_dict(TE_edges, TE_assoc_ratio)
 
         crossling_edges = [(k[0], k[1], v) for k, v in (Counter(TE_edges) + Counter(lev_edges)).items()]
 
@@ -455,8 +457,7 @@ if __name__ == "__main__":
     depth = 3
     levenshtein_theta = 0.8
 
-    for (TE_assoc_ratio, orth_assoc_ratio) in [(1, 1), (2, 1), (1, 2), (3, 1), (3, 1), (10, 1), (1, 10), (5, 10),
-                                               (10, 5)]:
+    for (TE_assoc_ratio, orth_assoc_ratio) in [(3, 3), (5, 5), (7,7), (3,5), (5,3), (7,3), (3,7), (5,7), (7,5)]:
 
         biling = construct_bilingual_graph(fn_en, fn_nl, en_nl_dic, levenshtein_theta, TE_assoc_ratio, orth_assoc_ratio)
 
