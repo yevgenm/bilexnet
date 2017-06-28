@@ -6,6 +6,7 @@ import csv
 import numpy as np
 import ml_metrics as metrics
 import pandas
+import pickle
 
 np.random.seed(12345678)
 threshold_frequency = 0
@@ -213,7 +214,9 @@ if __name__ == "__main__":
 
     test_data = read_aggregated_test_data()['EE']
     #norm_data = read_norm_data("./Dutch/shrunkdutch2.csv")
-    norm_data = read_norm_data("./EAT/shrunkEAT.net_plain")
+    #norm_data = read_norm_data("./EAT/shrunkEAT.net_plain")
+    with open("southflor.pickle",'rb') as fn:
+        norm_data = pickle.load(fn, encoding="latin1")
 
     test_words = set(EE_session[2].keys()).intersection(set(norm_data.keys()))
     tvds, rbds, apks = get_diff(EE_session[2], EE_session[0], test_words)
