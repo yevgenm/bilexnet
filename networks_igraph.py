@@ -16,6 +16,7 @@ import copy
 mapping = {'E': ":EN", 'D': ":NL"}
 noise_list = ["x", "", None]
 alpha = 1
+threshold_frequency = 1
 
 # def normalize_graph(G):
 #     for v in G.vs:
@@ -103,7 +104,7 @@ def construct_bilingual_graph(fn_en, fn_nl, en_nl_dic, theta, TE_assoc_ratio, or
         for i in range(1, 4):
             edges.update(zip(df_nl['cue'], df_nl['asso' + str(i)]))
         weighted_edges_nl = [(e[0][0] + ":NL", e[0][1] + ":NL", e[1]) for e in edges.items() if e[0][1] not in
-                            noise_list]
+                            noise_list and e[1] > threshold_frequency]
         vertices_nl = [word+":NL" for word in set.union(set(df_nl['cue']), set(df_nl['asso1']), set(df_nl['asso2']),
                                                   set(df_nl['asso3']))]
 
@@ -112,7 +113,7 @@ def construct_bilingual_graph(fn_en, fn_nl, en_nl_dic, theta, TE_assoc_ratio, or
         for i in range(1, 4):
             edges.update(zip(df_en['cue'], df_en['asso' + str(i)]))
         weighted_edges_en = [(e[0][0] + ":EN", e[0][1] + ":EN", e[1]) for e in edges.items() if e[0][1] not in
-                            noise_list]
+                            noise_list and e[1] > threshold_frequency]
         vertices_en = [word+":EN" for word in set.union(set(df_en['cue']), set(df_en['asso1']), set(df_en['asso2']),
                                                   set(df_en['asso3']))]
 
@@ -208,32 +209,40 @@ def read_test_data():
     for tl in DD_test_lists:
         for (c, r), f in Counter(tl).items():
             if r != "":
-                if c not in gold_dict['DD']: gold_dict['DD'][c] = []
-                gold_dict['DD'][c].append((r,f))
+                if c not in gold_dict['DD']: gold_dict['DD'][c] = {}
+                if r not in gold_dict['DD'][c]: gold_dict['DD'][c][r] = 0
+                gold_dict['DD'][c][r] += f
 
     EE_test_lists = [EE_ED_EE_test_dict['E']['E'],
                      ED_EE_test_dict['E']['E']]
     for tl in EE_test_lists:
         for (c, r), f in Counter(tl).items():
             if r != "":
-                if c not in gold_dict['EE']: gold_dict['EE'][c] = []
-                gold_dict['EE'][c].append((r, f))
+                if c not in gold_dict['EE']: gold_dict['EE'][c] = {}
+                if r not in gold_dict['EE'][c]: gold_dict['EE'][c][r] = 0
+                gold_dict['EE'][c][r] += f
 
     DE_test_lists = [DD_DE_DD_test_dict['D']['E'],
                      DE_DD_test_dict['D']['E']]
     for tl in DE_test_lists:
         for (c, r), f in Counter(tl).items():
             if r != "":
-                if c not in gold_dict['DE']: gold_dict['DE'][c] = []
-                gold_dict['DE'][c].append((r, f))
+                if c not in gold_dict['DE']: gold_dict['DE'][c] = {}
+                if r not in gold_dict['DE'][c]: gold_dict['DE'][c][r] = 0
+                gold_dict['DE'][c][r] += f
 
     ED_test_lists = [EE_ED_EE_test_dict['E']['D'],
                      ED_EE_test_dict['E']['D']]
     for tl in ED_test_lists:
         for (c, r), f in Counter(tl).items():
             if r != "":
-                if c not in gold_dict['ED']: gold_dict['ED'][c] = []
-                gold_dict['ED'][c].append((r, f))
+                if c not in gold_dict['ED']: gold_dict['ED'][c] = {}
+                if r not in gold_dict['ED'][c]: gold_dict['ED'][c][r] = 0
+                gold_dict['ED'][c][r] += f
+
+    for d_of_d in gold_dict.values():
+        for k,d in d_of_d.items():
+            d_of_d[k] = {k: v for k, v in d.items() if v > threshold_frequency}
 
     return(gold_dict)
 
@@ -257,7 +266,7 @@ def construct_igraph(fn, lang):
     edges = Counter()
     for i in range(1,4):
         edges.update(zip(df['cue'], df['asso'+str(i)]))
-    weighted_edges = [(e[0][0]+":"+lang, e[0][1]+":"+lang,e[1]) for e in edges.items() if e[0][1] not in noise_list]
+    weighted_edges = [(e[0][0]+":"+lang, e[0][1]+":"+lang,e[1]) for e in edges.items() if e[0][1] not in noise_list and e[1] > threshold_frequency]
     weighted_edges = normalize_tuple_list(weighted_edges, 1)
     G = Graph.TupleList(edges=weighted_edges, edge_attrs="weight", directed=True)
     return G
@@ -335,9 +344,9 @@ def spread_activation_plot(G, responses, G_sub, depth):
             else:
                 responses_single_word = {k:v/total*weight*alpha for k,v in new.items()}
                 for resp,wei in responses_single_word.items():
+                    if resp not in G_sub.vs['name']:
+                        G_sub.add_vertex(name=resp)
                     if wei > 0.005:
-                        if resp not in G_sub.vs['name']:
-                            G_sub.add_vertex(name=resp)
                         e = G_sub.get_eid(G_sub.vs.find(name=vertex), G_sub.vs.find(name=resp), directed=True, error=False)
                         if e != -1:
                             G_sub.es[e]['weight'] += wei
@@ -455,11 +464,12 @@ if __name__ == "__main__":
     #test = ['DD', 'EE', 'DE']
     test = ['EE']
 
-    depth_baseline = 3
+    depth_baseline = 1
     depth = 3
     levenshtein_theta = 0.8
 
-    for (TE_assoc_ratio, orth_assoc_ratio) in [(3, 3), (5, 5), (7,7), (3,5), (5,3), (7,3), (3,7), (5,7), (7,5)]:
+    #for (TE_assoc_ratio, orth_assoc_ratio) in [(3, 3), (5, 5), (7,7), (3,5), (5,3), (7,3), (3,7), (5,7), (7,5)]:
+    for (TE_assoc_ratio, orth_assoc_ratio) in [(5,7)]:
 
         biling = construct_bilingual_graph(fn_en, fn_nl, en_nl_dic, levenshtein_theta, TE_assoc_ratio, orth_assoc_ratio)
 
@@ -475,11 +485,11 @@ if __name__ == "__main__":
         if 'EE' in test:
             print("NET:%s, DEPTH:%i, TE:%i, ORTH:%i" % ("en", depth_baseline, TE_assoc_ratio, orth_assoc_ratio))
             tvd_base, rbd_base, apk_base = test_network(en, test_list_EE, depth_baseline, 'EE', gold_full=gold_dict, verbose=True)
-            print("NET:%s, DEPTH:%i, TE:%i, ORTH:%i" % ("bi", depth, TE_assoc_ratio, orth_assoc_ratio))
-            tvd_m, rbd_m, apk_m = test_network(biling, test_list_EE, depth, 'EE', gold_full=gold_dict, verbose=True)
-            print("TVD t-test: T=%.2f, p=%.3f" % (ttest_rel(tvd_base, tvd_m)[0], ttest_rel(tvd_base, tvd_m)[1]))
-            print("RBD t-test: T=%.2f, p=%.3f" % (ttest_rel(rbd_base, rbd_m)[0], ttest_rel(rbd_base, rbd_m)[1]))
-            print("APK t-test: T=%.2f, p=%.3f" % (ttest_rel(apk_base, apk_m)[0], ttest_rel(apk_base, apk_m)[1]))
+            # print("NET:%s, DEPTH:%i, TE:%i, ORTH:%i" % ("bi", depth, TE_assoc_ratio, orth_assoc_ratio))
+            # tvd_m, rbd_m, apk_m = test_network(biling, test_list_EE, depth, 'EE', gold_full=gold_dict, verbose=True)
+            # print("TVD t-test: T=%.2f, p=%.3f" % (ttest_rel(tvd_base, tvd_m)[0], ttest_rel(tvd_base, tvd_m)[1]))
+            # print("RBD t-test: T=%.2f, p=%.3f" % (ttest_rel(rbd_base, rbd_m)[0], ttest_rel(rbd_base, rbd_m)[1]))
+            # print("APK t-test: T=%.2f, p=%.3f" % (ttest_rel(apk_base, apk_m)[0], ttest_rel(apk_base, apk_m)[1]))
 
         if 'DE' in test:
             print("NET:%s, DEPTH:%i, TE:%i, ORTH:%i" % ("bi", depth, TE_assoc_ratio, orth_assoc_ratio))
@@ -489,7 +499,7 @@ if __name__ == "__main__":
             print("NET:%s, DEPTH:%i, TE:%i, ORTH:%i" % ("bi", depth, TE_assoc_ratio, orth_assoc_ratio))
             tvd, rbd, apk = test_network(biling, test_list_ED, depth, 'ED', en_nl_dic, gold_full=gold_dict, verbose=False)
 
-        # plot_list = ["climb:EN"]
+        # plot_list = ["yellow:EN"]
         # for w in plot_list:
-        #     plot_subgraph(en, w, 2, "en")
-        #     plot_subgraph(biling, w, 2, "biling")
+        #     plot_subgraph(en, w, 3, "en")
+        #     plot_subgraph(biling, w, 3, "biling")
