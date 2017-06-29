@@ -464,7 +464,7 @@ if __name__ == "__main__":
     #test = ['DD', 'EE', 'DE']
     test = ['EE']
 
-    depth_baseline = 1
+    depth_baseline = 3
     depth = 3
     levenshtein_theta = 0.8
 
@@ -485,11 +485,11 @@ if __name__ == "__main__":
         if 'EE' in test:
             print("NET:%s, DEPTH:%i, TE:%i, ORTH:%i" % ("en", depth_baseline, TE_assoc_ratio, orth_assoc_ratio))
             tvd_base, rbd_base, apk_base = test_network(en, test_list_EE, depth_baseline, 'EE', gold_full=gold_dict, verbose=True)
-            # print("NET:%s, DEPTH:%i, TE:%i, ORTH:%i" % ("bi", depth, TE_assoc_ratio, orth_assoc_ratio))
-            # tvd_m, rbd_m, apk_m = test_network(biling, test_list_EE, depth, 'EE', gold_full=gold_dict, verbose=True)
-            # print("TVD t-test: T=%.2f, p=%.3f" % (ttest_rel(tvd_base, tvd_m)[0], ttest_rel(tvd_base, tvd_m)[1]))
-            # print("RBD t-test: T=%.2f, p=%.3f" % (ttest_rel(rbd_base, rbd_m)[0], ttest_rel(rbd_base, rbd_m)[1]))
-            # print("APK t-test: T=%.2f, p=%.3f" % (ttest_rel(apk_base, apk_m)[0], ttest_rel(apk_base, apk_m)[1]))
+            print("NET:%s, DEPTH:%i, TE:%i, ORTH:%i" % ("bi", depth, TE_assoc_ratio, orth_assoc_ratio))
+            tvd_m, rbd_m, apk_m = test_network(biling, test_list_EE, depth, 'EE', gold_full=gold_dict, verbose=True)
+            print("TVD t-test: T=%.2f, p=%.3f" % (ttest_rel(tvd_base, tvd_m)[0], ttest_rel(tvd_base, tvd_m)[1]))
+            print("RBD t-test: T=%.2f, p=%.3f" % (ttest_rel(rbd_base, rbd_m)[0], ttest_rel(rbd_base, rbd_m)[1]))
+            print("APK t-test: T=%.2f, p=%.3f" % (ttest_rel(apk_base, apk_m)[0], ttest_rel(apk_base, apk_m)[1]))
 
         if 'DE' in test:
             print("NET:%s, DEPTH:%i, TE:%i, ORTH:%i" % ("bi", depth, TE_assoc_ratio, orth_assoc_ratio))
