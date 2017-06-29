@@ -33,8 +33,8 @@ with open('southflor.pickle', 'wb') as handle:
         for line in l:
             line = line
             line = line.split(",")
-            cue = line[0].lower()
-            target = line[1].lower()
+            cue = line[0].lower().strip()
+            target = line[1].lower().strip()
             average = float(line[5])
             
             #print(cue)
