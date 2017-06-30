@@ -1,0 +1,359 @@
+NET:bi, DEPTH:3, TE:1, ORTH:1
+	CUE: admit:EN
+		GOLD
+			fault:EN		0.417
+			wrong:EN		0.417
+			crime:EN		0.167
+		MAX DEPTH: 3
+			confess:EN		0.058
+			defeat:EN		0.045
+			yes:EN		0.044
+			allow:EN		0.043
+			to:EN		0.042
+		TVD: 1.000
+		RBD: 0.926
+		APK: 1.000
+	CUE: angry:EN
+		GOLD
+			mad:EN		0.320
+			man:EN		0.160
+			furious:EN		0.120
+			happy:EN		0.120
+			upset:EN		0.120
+		MAX DEPTH: 3
+			mad:EN		0.108
+			man:EN		0.067
+			cross:EN		0.058
+			woman:EN		0.049
+			sad:EN		0.045
+		TVD: 0.567
+		RBD: 0.452
+		APK: 0.714
+	CUE: apple:EN
+		GOLD
+			fruit:EN		0.255
+			tree:EN		0.235
+			pear:EN		0.176
+			green:EN		0.098
+			bite:EN		0.059
+		MAX DEPTH: 3
+			pear:EN		0.136
+			orange:EN		0.089
+			tree:EN		0.087
+			pie:EN		0.073
+			fruit:EN		0.062
+		TVD: 0.450
+		RBD: 0.478
+		APK: 0.550
+	CUE: arrest:EN
+		GOLD
+			police:EN		0.688
+			prison:EN		0.094
+			thief:EN		0.094
+			jail:EN		0.062
+			policeman:EN		0.062
+		MAX DEPTH: 3
+			police:EN		0.194
+			stop:EN		0.087
+			car:EN		0.049
+			policeman:EN		0.032
+			man:EN		0.026
+		TVD: 0.438
+		RBD: 0.495
+		APK: 0.700
+	CUE: attempt:EN
+		GOLD
+			try:EN		0.564
+			suicide:EN		0.154
+			murder:EN		0.128
+			doing:EN		0.051
+			failure:EN		0.051
+		MAX DEPTH: 3
+			try:EN		0.304
+			fail:EN		0.049
+			again:EN		0.045
+			hard:EN		0.037
+			failure:EN		0.027
+		TVD: 0.385
+		RBD: 0.502
+		APK: 0.767
+	CUE: bend:EN
+		GOLD
+			knees:EN		0.250
+			over:EN		0.188
+			tree:EN		0.188
+			bicycle:EN		0.125
+			hold:EN		0.125
+		MAX DEPTH: 3
+			twist:EN		0.065
+			road:EN		0.059
+			over:EN		0.041
+			round:EN		0.036
+			it:EN		0.035
+		TVD: 0.846
+		RBD: 0.843
+		APK: 0.944
+	CUE: bike:EN
+		GOLD
+			wheel:EN		0.212
+			cycle:EN		0.182
+			car:EN		0.152
+			mountain:EN		0.091
+			ride:EN		0.091
+		MAX DEPTH: 3
+			wheel:EN		0.130
+			car:EN		0.116
+			cycle:EN		0.055
+			ride:EN		0.044
+			motor:EN		0.042
+		TVD: 0.436
+		RBD: 0.354
+		APK: 0.556
+	CUE: bird:EN
+		GOLD
+			fly:EN		0.250
+			sing:EN		0.250
+			sky:EN		0.136
+			tree:EN		0.091
+			flying:EN		0.068
+		MAX DEPTH: 3
+			feather:EN		0.072
+			bee:EN		0.055
+			girl:EN		0.054
+			tree:EN		0.052
+			fly:EN		0.049
+		TVD: 0.719
+		RBD: 0.705
+		APK: 0.880
+	CUE: blind:EN
+		GOLD
+			man:EN		0.171
+			see:EN		0.143
+			deaf:EN		0.114
+			dog:EN		0.114
+			dark:EN		0.057
+		MAX DEPTH: 3
+			window:EN		0.064
+			venetian:EN		0.054
+			man:EN		0.042
+			eye:EN		0.041
+			deaf:EN		0.038
+		TVD: 0.627
+		RBD: 0.644
+		APK: 0.787
+	CUE: block:EN
+		GOLD
+			wood:EN		0.273
+			circle:EN		0.212
+			stone:EN		0.121
+			house:EN		0.091
+			build:EN		0.061
+		MAX DEPTH: 3
+			wood:EN		0.074
+			flat:EN		0.063
+			tree:EN		0.047
+			house:EN		0.046
+			brick:EN		0.040
+		TVD: 0.600
+		RBD: 0.438
+		APK: 0.736
+	CUE: bottle:EN
+		GOLD
+			wine:EN		0.630
+			drink:EN		0.148
+			water:EN		0.074
+			cork:EN		0.037
+			drunk:EN		0.037
+		MAX DEPTH: 3
+			beer:EN		0.153
+			drink:EN		0.093
+			top:EN		0.051
+			water:EN		0.036
+			glass:EN		0.034
+		TVD: 0.741
+		RBD: 0.403
+		APK: 0.796
+	CUE: calculate:EN
+		GOLD
+			mathematics:EN		0.450
+			calculator:EN		0.150
+			machine:EN		0.150
+			maths:EN		0.150
+			statistics:EN		0.100
+		MAX DEPTH: 3
+			math:EN		0.090
+			add:EN		0.087
+			sum:EN		0.063
+			machine:EN		0.055
+			subtract:EN		0.035
+		TVD: 0.850
+		RBD: 0.844
+		APK: 0.950
+	CUE: captain:EN
+		GOLD
+			ship:EN		0.804
+			boat:EN		0.196
+		MAX DEPTH: 3
+			ship:EN		0.267
+			sea:EN		0.094
+			boat:EN		0.081
+			sail:EN		0.035
+			army:EN		0.026
+		TVD: 0.260
+		RBD: 0.045
+		APK: 0.500
+	CUE: care:EN
+		GOLD
+			hospital:EN		0.186
+			nurse:EN		0.163
+			child:EN		0.140
+			mother:EN		0.140
+			baby:EN		0.116
+		MAX DEPTH: 3
+			for:EN		0.074
+			love:EN		0.070
+			full:EN		0.058
+			empty:EN		0.029
+			of:EN		0.025
+		TVD: 0.794
+		RBD: 0.790
+		APK: 0.844
+	CUE: cause:EN
+		GOLD
+			reason:EN		0.324
+			accident:EN		0.243
+			effect:EN		0.162
+			consequence:EN		0.054
+			law:EN		0.054
+		MAX DEPTH: 3
+			effect:EN		0.204
+			reason:EN		0.144
+			result:EN		0.064
+			why:EN		0.039
+			exam:EN		0.022
+		TVD: 0.565
+		RBD: 0.684
+		APK: 0.750
+	CUE: chance:EN
+		GOLD
+			opportunity:EN		0.553
+			luck:EN		0.158
+			possibility:EN		0.105
+			lucky:EN		0.079
+			gambling:EN		0.053
+		MAX DEPTH: 3
+			luck:EN		0.143
+			opportunity:EN		0.058
+			good:EN		0.044
+			bad:EN		0.041
+			meeting:EN		0.041
+		TVD: 0.681
+		RBD: 0.478
+		APK: 0.667
+	CUE: circle:EN
+		GOLD
+			round:EN		0.511
+			square:EN		0.267
+			triangle:EN		0.089
+			ball:EN		0.044
+			figure:EN		0.044
+		MAX DEPTH: 3
+			square:EN		0.193
+			round:EN		0.177
+			ring:EN		0.045
+			shape:EN		0.020
+			about:EN		0.019
+		TVD: 0.322
+		RBD: 0.409
+		APK: 0.583
+	CUE: climb:EN
+		GOLD
+			mountain:EN		0.500
+			tree:EN		0.353
+			stairs:EN		0.088
+			rock:EN		0.059
+		MAX DEPTH: 3
+			mountain:EN		0.130
+			hill:EN		0.094
+			up:EN		0.077
+			down:EN		0.061
+			rock:EN		0.037
+		TVD: 0.642
+		RBD: 0.374
+		APK: 0.750
+	CUE: coffee:EN
+		GOLD
+			tea:EN		0.667
+			drink:EN		0.088
+			black:EN		0.053
+			cup:EN		0.053
+			milk:EN		0.053
+		MAX DEPTH: 3
+			tea:EN		0.225
+			cup:EN		0.071
+			black:EN		0.041
+			saucer:EN		0.028
+			pot:EN		0.027
+		TVD: 0.330
+		RBD: 0.279
+		APK: 0.490
+	CUE: cruel:EN
+		GOLD
+			bad:EN		0.167
+			murder:EN		0.167
+			people:EN		0.167
+			revenge:EN		0.167
+			soft:EN		0.167
+		MAX DEPTH: 3
+			sea:EN		0.138
+			kind:EN		0.097
+			nasty:EN		0.038
+			sadist:EN		0.025
+			hurt:EN		0.022
+		TVD: 1.000
+		RBD: 0.951
+		APK: 1.000
+	CUE: cry:EN
+		GOLD
+			tears:EN		0.276
+			sad:EN		0.172
+			child:EN		0.103
+			help:EN		0.103
+			baby:EN		0.069
+		MAX DEPTH: 3
+			baby:EN		0.129
+			tear:EN		0.086
+			out:EN		0.043
+			weep:EN		0.037
+			laugh:EN		0.027
+		TVD: 0.814
+		RBD: 0.748
+		APK: 0.815
+	CUE: dare:EN
+		GOLD
+			brave:EN		0.211
+			truth:EN		0.158
+			animal:EN		0.105
+			attempt:EN		0.105
+			devil:EN		0.105
+		MAX DEPTH: 3
+			devil:EN		0.104
+			dan:EN		0.083
+			do:EN		0.062
+			you:EN		0.052
+			try:EN		0.049
+		TVD: 0.789
+		RBD: 0.765
+		APK: 0.792
+	CUE: daughter:EN
+		GOLD
+			son:EN		0.845
+			mother:EN		0.069
+			sister:EN		0.052
+			child:EN		0.034
+		MAX DEPTH: 3
+			son:EN		0.410
+			father:EN		0.106
+			mother:EN		0.084
+			girl:EN		0.066
+			sister:EN		0.057
