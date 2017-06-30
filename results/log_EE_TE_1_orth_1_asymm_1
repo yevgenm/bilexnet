@@ -357,3 +357,1358 @@ NET:bi, DEPTH:3, TE:1, ORTH:1
 			mother:EN		0.084
 			girl:EN		0.066
 			sister:EN		0.057
+		TVD: 0.317
+		RBD: 0.165
+		APK: 0.583
+	CUE: demand:EN
+		GOLD
+			question:EN		0.378
+			ask:EN		0.351
+			order:EN		0.162
+			asking:EN		0.054
+			teacher:EN		0.054
+		MAX DEPTH: 3
+			ask:EN		0.165
+			answer:EN		0.068
+			question:EN		0.059
+			money:EN		0.059
+			supply:EN		0.049
+		TVD: 0.501
+		RBD: 0.525
+		APK: 0.667
+	CUE: dependent:EN
+		GOLD
+			independent:EN		0.476
+			woman:EN		0.286
+			parents:EN		0.143
+			child:EN		0.095
+		MAX DEPTH: 3
+			child:EN		0.070
+			relative:EN		0.070
+			independent:EN		0.057
+			mother:EN		0.049
+			need:EN		0.037
+		TVD: 0.672
+		RBD: 0.597
+		APK: 0.583
+	CUE: dirty:EN
+		GOLD
+			clean:EN		0.400
+			clothes:EN		0.200
+			filthy:EN		0.100
+			mind:EN		0.100
+			sand:EN		0.100
+		MAX DEPTH: 3
+			clean:EN		0.110
+			filthy:EN		0.052
+			filth:EN		0.040
+			wash:EN		0.038
+			word:EN		0.038
+		TVD: 0.550
+		RBD: 0.487
+		APK: 0.667
+	CUE: disturb:EN
+		GOLD
+			noise:EN		0.333
+			order:EN		0.250
+			silence:EN		0.250
+			upset:EN		0.167
+		MAX DEPTH: 3
+			annoy:EN		0.078
+			sleep:EN		0.049
+			upset:EN		0.044
+			don&#39;t:EN		0.043
+			interrupt:EN		0.041
+		TVD: 0.833
+		RBD: 0.685
+		APK: 0.917
+	CUE: doctor:EN
+		GOLD
+			nurse:EN		0.356
+			medicin:EN		0.200
+			hospital:EN		0.089
+			medical:EN		0.089
+			sick:EN		0.089
+		MAX DEPTH: 3
+			nurse:EN		0.136
+			hospital:EN		0.073
+			ill:EN		0.043
+			sick:EN		0.034
+			medicine:EN		0.032
+		TVD: 0.497
+		RBD: 0.486
+		APK: 0.694
+	CUE: duty:EN
+		GOLD
+			army:EN		0.234
+			free:EN		0.149
+			law:EN		0.085
+			officer:EN		0.064
+			police:EN		0.064
+		MAX DEPTH: 3
+			free:EN		0.040
+			bound:EN		0.038
+			responsibility:EN		0.038
+			to:EN		0.031
+			none:EN		0.026
+		TVD: 0.733
+		RBD: 0.713
+		APK: 0.863
+	CUE: ease:EN
+		GOLD
+			easy:EN		0.241
+			difficult:EN		0.207
+			at:EN		0.172
+			comfortable:EN		0.103
+			calm:EN		0.069
+		MAX DEPTH: 3
+			hard:EN		0.054
+			easy:EN		0.050
+			difficulty:EN		0.046
+			leisure:EN		0.046
+			comfort:EN		0.042
+		TVD: 0.782
+		RBD: 0.721
+		APK: 0.902
+	CUE: expensive:EN
+		GOLD
+			cheap:EN		0.625
+			clothes:EN		0.125
+			gold:EN		0.083
+			money:EN		0.083
+			shop:EN		0.083
+		MAX DEPTH: 3
+			dear:EN		0.182
+			cheap:EN		0.139
+			money:EN		0.044
+			taste:EN		0.031
+			sir:EN		0.026
+		TVD: 0.587
+		RBD: 0.563
+		APK: 0.767
+	CUE: faith:EN
+		GOLD
+			belief:EN		0.159
+			trust:EN		0.159
+			god:EN		0.136
+			hope:EN		0.091
+			true:EN		0.091
+		MAX DEPTH: 3
+			hope:EN		0.137
+			god:EN		0.093
+			religion:EN		0.078
+			church:EN		0.051
+			belief:EN		0.049
+		TVD: 0.549
+		RBD: 0.585
+		APK: 0.533
+	CUE: farm:EN
+		GOLD
+			animals:EN		0.250
+			cow:EN		0.231
+			farmer:EN		0.212
+			pig:EN		0.115
+			chicken:EN		0.077
+		MAX DEPTH: 3
+			cow:EN		0.100
+			animal:EN		0.098
+			yard:EN		0.041
+			house:EN		0.039
+			dog:EN		0.036
+		TVD: 0.769
+		RBD: 0.739
+		APK: 0.857
+	CUE: figure:EN
+		GOLD
+			circle:EN		0.333
+			body:EN		0.190
+			father:EN		0.095
+			good:EN		0.095
+			mathematics:EN		0.095
+		MAX DEPTH: 3
+			number:EN		0.131
+			two:EN		0.038
+			ten:EN		0.035
+			eight:EN		0.034
+			math:EN		0.032
+		TVD: 1.000
+		RBD: 0.987
+		APK: 1.000
+	CUE: finger:EN
+		GOLD
+			hand:EN		0.491
+			tip:EN		0.113
+			ring:EN		0.094
+			nail:EN		0.075
+			thumb:EN		0.075
+		MAX DEPTH: 3
+			hand:EN		0.116
+			thumb:EN		0.108
+			nail:EN		0.073
+			toe:EN		0.040
+			foot:EN		0.036
+		TVD: 0.531
+		RBD: 0.382
+		APK: 0.500
+	CUE: flower:EN
+		GOLD
+			rose:EN		0.233
+			tree:EN		0.233
+			smell:EN		0.186
+			yellow:EN		0.093
+			garden:EN		0.070
+		MAX DEPTH: 3
+			power:EN		0.056
+			garden:EN		0.036
+			pot:EN		0.034
+			rise:EN		0.030
+			petal:EN		0.027
+		TVD: 0.806
+		RBD: 0.742
+		APK: 0.736
+	CUE: forget:EN
+		GOLD
+			memory:EN		0.409
+			remember:EN		0.409
+			appointment:EN		0.091
+			thinking:EN		0.091
+		MAX DEPTH: 3
+			remember:EN		0.211
+			memory:EN		0.071
+			me:EN		0.041
+			me-not:EN		0.036
+			thought:EN		0.029
+		TVD: 0.394
+		RBD: 0.492
+		APK: 0.500
+	CUE: fresh:EN
+		GOLD
+			new:EN		0.250
+			dirty:EN		0.150
+			fruit:EN		0.150
+			water:EN		0.150
+			air:EN		0.100
+		MAX DEPTH: 3
+			new:EN		0.060
+			fish:EN		0.053
+			air:EN		0.049
+			cream:EN		0.040
+			old:EN		0.039
+		TVD: 0.506
+		RBD: 0.368
+		APK: 0.457
+	CUE: frown:EN
+		GOLD
+			face:EN		0.400
+			head:EN		0.150
+			thinking:EN		0.150
+			forehead:EN		0.100
+			old:EN		0.100
+		MAX DEPTH: 3
+			smile:EN		0.058
+			wrinkle:EN		0.058
+			face:EN		0.052
+			forehead:EN		0.041
+			laugh:EN		0.039
+		TVD: 0.615
+		RBD: 0.586
+		APK: 0.597
+	CUE: funny:EN
+		GOLD
+			joke:EN		0.286
+			clown:EN		0.250
+			laughing:EN		0.143
+			nice:EN		0.107
+			bugs:EN		0.071
+		MAX DEPTH: 3
+			laugh:EN		0.165
+			girl:EN		0.098
+			joke:EN		0.054
+			cry:EN		0.044
+			hilarious:EN		0.041
+		TVD: 0.817
+		RBD: 0.701
+		APK: 0.762
+	CUE: green:EN
+		GOLD
+			grass:EN		0.256
+			red:EN		0.179
+			yellow:EN		0.154
+			blue:EN		0.103
+			tree:EN		0.103
+		MAX DEPTH: 3
+			grass:EN		0.095
+			cabbage:EN		0.061
+			blue:EN		0.058
+			red:EN		0.055
+			vegetable:EN		0.052
+		TVD: 0.522
+		RBD: 0.399
+		APK: 0.698
+	CUE: guess:EN
+		GOLD
+			question:EN		0.381
+			answer:EN		0.190
+			ask:EN		0.143
+			choice:EN		0.095
+			gambling:EN		0.095
+		MAX DEPTH: 3
+			what:EN		0.085
+			who:EN		0.083
+			try:EN		0.045
+			question:EN		0.042
+			answer:EN		0.035
+		TVD: 0.663
+		RBD: 0.660
+		APK: 0.733
+	CUE: happy:EN
+		GOLD
+			unhappy:EN		0.364
+			sad:EN		0.273
+			birthday:EN		0.136
+			smile:EN		0.136
+			joy:EN		0.091
+		MAX DEPTH: 3
+			sad:EN		0.268
+			lucky:EN		0.036
+			content:EN		0.036
+			glad:EN		0.027
+			gay:EN		0.027
+		TVD: 0.727
+		RBD: 0.487
+		APK: 0.800
+	CUE: hate:EN
+		GOLD
+			love:EN		0.690
+			anger:EN		0.103
+			angry:EN		0.103
+			enemy:EN		0.103
+		MAX DEPTH: 3
+			love:EN		0.328
+			hat:EN		0.031
+			fear:EN		0.029
+			like:EN		0.021
+			life:EN		0.021
+		TVD: 0.310
+		RBD: 0.498
+		APK: 0.750
+	CUE: hell:EN
+		GOLD
+			heaven:EN		0.706
+			devil:EN		0.157
+			fire:EN		0.098
+			awful:EN		0.039
+		MAX DEPTH: 3
+			fire:EN		0.167
+			heaven:EN		0.146
+			above:EN		0.038
+			angel:EN		0.028
+			sack:EN		0.027
+		TVD: 0.516
+		RBD: 0.449
+		APK: 0.500
+	CUE: holy:EN
+		GOLD
+			church:EN		0.417
+			christ:EN		0.250
+			ghost:EN		0.125
+			spirit:EN		0.125
+			saint:EN		0.083
+		MAX DEPTH: 3
+			church:EN		0.077
+			god:EN		0.056
+			bible:EN		0.054
+			water:EN		0.031
+			book:EN		0.028
+		TVD: 0.686
+		RBD: 0.452
+		APK: 0.800
+	CUE: hope:EN
+		GOLD
+			faith:EN		0.182
+			future:EN		0.182
+			god:EN		0.182
+			belief:EN		0.136
+			glory:EN		0.136
+		MAX DEPTH: 3
+			fear:EN		0.111
+			charity:EN		0.033
+			faith:EN		0.030
+			glory:EN		0.028
+			wish:EN		0.021
+		TVD: 0.780
+		RBD: 0.711
+		APK: 0.881
+	CUE: hospital:EN
+		GOLD
+			sick:EN		0.412
+			doctor:EN		0.157
+			nurse:EN		0.137
+			ill:EN		0.118
+			bed:EN		0.078
+		MAX DEPTH: 3
+			bed:EN		0.130
+			nurse:EN		0.075
+			ill:EN		0.071
+			doctor:EN		0.070
+			sick:EN		0.069
+		TVD: 0.380
+		RBD: 0.424
+		APK: 0.286
+	CUE: information:EN
+		GOLD
+			desk:EN		0.185
+			book:EN		0.148
+			computer:EN		0.148
+			paper:EN		0.111
+			tourist:EN		0.111
+		MAX DEPTH: 3
+			knowledge:EN		0.062
+			desk:EN		0.059
+			news:EN		0.049
+			office:EN		0.042
+			data:EN		0.039
+		TVD: 0.551
+		RBD: 0.564
+		APK: 0.654
+	CUE: insight:EN
+		GOLD
+			outside:EN		0.542
+			thinking:EN		0.125
+			intelligence:EN		0.083
+			question:EN		0.083
+			sight:EN		0.083
+		MAX DEPTH: 3
+			into:EN		0.061
+			brain:EN		0.038
+			see:EN		0.038
+			knowledge:EN		0.037
+			eye:EN		0.036
+		TVD: 1.000
+		RBD: 0.856
+		APK: 1.000
+	CUE: jail:EN
+		GOLD
+			prison:EN		0.800
+			police:EN		0.080
+			prisoner:EN		0.080
+			rock:EN		0.040
+		MAX DEPTH: 3
+			prison:EN		0.143
+			bird:EN		0.137
+			bar:EN		0.043
+			house:EN		0.031
+			cell:EN		0.030
+		TVD: 0.596
+		RBD: 0.513
+		APK: 0.750
+	CUE: knife:EN
+		GOLD
+			fork:EN		0.435
+			sharp:EN		0.087
+			spoon:EN		0.087
+			cutting:EN		0.065
+			gun:EN		0.065
+		MAX DEPTH: 3
+			fork:EN		0.274
+			cut:EN		0.070
+			stab:EN		0.038
+			sharp:EN		0.038
+			kill:EN		0.033
+		TVD: 0.304
+		RBD: 0.405
+		APK: 0.476
+	CUE: listen:EN
+		GOLD
+			hear:EN		0.385
+			music:EN		0.231
+			ears:EN		0.154
+			ear:EN		0.077
+			hearing:EN		0.077
+		MAX DEPTH: 3
+			hear:EN		0.125
+			heard:EN		0.115
+			ear:EN		0.076
+			to:EN		0.054
+			see:EN		0.043
+		TVD: 0.583
+		RBD: 0.464
+		APK: 0.639
+	CUE: marry:EN
+		GOLD
+			husband:EN		0.292
+			happy:EN		0.208
+			children:EN		0.083
+			divorce:EN		0.083
+			man:EN		0.083
+		MAX DEPTH: 3
+			me:EN		0.125
+			wife:EN		0.113
+			husband:EN		0.062
+			woman:EN		0.062
+			you:EN		0.046
+		TVD: 0.745
+		RBD: 0.690
+		APK: 0.849
+	CUE: medical:EN
+		GOLD
+			doctor:EN		0.370
+			hospital:EN		0.370
+			medicin:EN		0.111
+			illness:EN		0.074
+			nurse:EN		0.074
+		MAX DEPTH: 3
+			doctor:EN		0.139
+			hospital:EN		0.064
+			nurse:EN		0.050
+			student:EN		0.035
+			care:EN		0.033
+		TVD: 0.357
+		RBD: 0.306
+		APK: 0.400
+	CUE: memory:EN
+		GOLD
+			thinking:EN		0.156
+			brain:EN		0.094
+			brains:EN		0.094
+			history:EN		0.094
+			mind:EN		0.094
+		MAX DEPTH: 3
+			mind:EN		0.067
+			forget:EN		0.058
+			remember:EN		0.053
+			test:EN		0.050
+			thought:EN		0.041
+		TVD: 0.793
+		RBD: 0.848
+		APK: 0.872
+	CUE: metal:EN
+		GOLD
+			iron:EN		0.295
+			steel:EN		0.227
+			hard:EN		0.136
+			heavy:EN		0.114
+			wood:EN		0.091
+		MAX DEPTH: 3
+			iron:EN		0.115
+			steel:EN		0.078
+			gold:EN		0.051
+			board:EN		0.034
+			work:EN		0.025
+		TVD: 0.375
+		RBD: 0.297
+		APK: 0.625
+	CUE: method:EN
+		GOLD
+			learning:EN		0.276
+			mathematics:EN		0.138
+			research:EN		0.138
+			school:EN		0.103
+			book:EN		0.069
+		MAX DEPTH: 3
+			way:EN		0.133
+			madness:EN		0.061
+			mean:EN		0.051
+			out:EN		0.029
+			system:EN		0.025
+		TVD: 1.000
+		RBD: 0.977
+		APK: 1.000
+	CUE: mirror:EN
+		GOLD
+			face:EN		0.195
+			yourself:EN		0.146
+			glass:EN		0.098
+			look:EN		0.098
+			beautiful:EN		0.073
+		MAX DEPTH: 3
+			wall:EN		0.086
+			image:EN		0.082
+			reflection:EN		0.080
+			glass:EN		0.049
+			face:EN		0.026
+		TVD: 0.647
+		RBD: 0.663
+		APK: 0.545
+	CUE: motive:EN
+		GOLD
+			reason:EN		0.360
+			crime:EN		0.200
+			murder:EN		0.200
+			drive:EN		0.080
+			kill:EN		0.080
+		MAX DEPTH: 3
+			reason:EN		0.179
+			why:EN		0.073
+			none:EN		0.032
+			not:EN		0.025
+			question:EN		0.023
+		TVD: 0.640
+		RBD: 0.510
+		APK: 0.833
+	CUE: move:EN
+		GOLD
+			walk:EN		0.400
+			car:EN		0.150
+			run:EN		0.150
+			chess:EN		0.100
+			sport:EN		0.100
+		MAX DEPTH: 3
+			car:EN		0.062
+			fast:EN		0.058
+			speed:EN		0.028
+			object:EN		0.027
+			house:EN		0.026
+		TVD: 0.850
+		RBD: 0.728
+		APK: 0.833
+	CUE: opportunity:EN
+		GOLD
+			chance:EN		0.921
+			take:EN		0.079
+		MAX DEPTH: 3
+			knock:EN		0.179
+			chance:EN		0.127
+			door:EN		0.072
+			luck:EN		0.062
+			miss:EN		0.023
+		TVD: 0.586
+		RBD: 0.284
+		APK: 0.750
+	CUE: paint:EN
+		GOLD
+			painter:EN		0.240
+			colour:EN		0.120
+			painting:EN		0.120
+			wall:EN		0.120
+			art:EN		0.080
+		MAX DEPTH: 3
+			brush:EN		0.118
+			picture:EN		0.045
+			hair:EN		0.033
+			red:EN		0.033
+			white:EN		0.033
+		TVD: 0.790
+		RBD: 0.734
+		APK: 0.876
+	CUE: panic:EN
+		GOLD
+			fear:EN		0.161
+			fire:EN		0.161
+			chaos:EN		0.129
+			disorder:EN		0.129
+			afraid:EN		0.097
+		MAX DEPTH: 3
+			fear:EN		0.124
+			fright:EN		0.058
+			stricken:EN		0.051
+			station:EN		0.039
+			run:EN		0.035
+		TVD: 0.839
+		RBD: 0.639
+		APK: 0.889
+	CUE: pepper:EN
+		GOLD
+			salt:EN		0.885
+			hot:EN		0.115
+		MAX DEPTH: 3
+			salt:EN		0.306
+			pot:EN		0.050
+			hot:EN		0.042
+			epsom:EN		0.034
+			water:EN		0.028
+		TVD: 0.140
+		RBD: 0.045
+		APK: 0.500
+	CUE: plan:EN
+		GOLD
+			map:EN		0.333
+			city:EN		0.185
+			holiday:EN		0.148
+			idea:EN		0.111
+			holidays:EN		0.074
+		MAX DEPTH: 3
+			map:EN		0.092
+			house:EN		0.054
+			campaign:EN		0.033
+			architect:EN		0.033
+			building:EN		0.033
+		TVD: 0.694
+		RBD: 0.600
+		APK: 0.857
+	CUE: police:EN
+		GOLD
+			car:EN		0.258
+			arrest:EN		0.194
+			cop:EN		0.129
+			jail:EN		0.097
+			academy:EN		0.065
+		MAX DEPTH: 3
+			car:EN		0.121
+			man:EN		0.073
+			force:EN		0.050
+			woman:EN		0.043
+			station:EN		0.029
+		TVD: 0.632
+		RBD: 0.579
+		APK: 0.810
+	CUE: possession:EN
+		GOLD
+			house:EN		0.240
+			money:EN		0.240
+			rich:EN		0.200
+			ball:EN		0.080
+			bike:EN		0.080
+		MAX DEPTH: 3
+			mine:EN		0.099
+			own:EN		0.077
+			have:EN		0.047
+			belonging:EN		0.040
+			good:EN		0.034
+		TVD: 1.000
+		RBD: 0.903
+		APK: 1.000
+	CUE: potato:EN
+		GOLD
+			chips:EN		0.333
+			food:EN		0.167
+			eat:EN		0.143
+			vegetable:EN		0.095
+			fries:EN		0.071
+		MAX DEPTH: 3
+			chip:EN		0.074
+			spud:EN		0.074
+			mash:EN		0.060
+			fish:EN		0.042
+			food:EN		0.041
+		TVD: 0.808
+		RBD: 0.819
+		APK: 0.941
+	CUE: pregnant:EN
+		GOLD
+			woman:EN		0.419
+			baby:EN		0.387
+			child:EN		0.194
+		MAX DEPTH: 3
+			woman:EN		0.265
+			baby:EN		0.090
+			man:EN		0.071
+			men:EN		0.043
+			girl:EN		0.041
+		TVD: 0.370
+		RBD: 0.111
+		APK: 0.333
+	CUE: principle:EN
+		GOLD
+			reason:EN		0.455
+			rule:EN		0.364
+			head:EN		0.182
+		MAX DEPTH: 3
+			moral:EN		0.070
+			rule:EN		0.041
+			idea:EN		0.028
+			law:EN		0.026
+			none:EN		0.025
+		TVD: 0.704
+		RBD: 0.542
+		APK: 0.833
+	CUE: promise:EN
+		GOLD
+			made:EN		0.176
+			belief:EN		0.118
+			break:EN		0.118
+			keep:EN		0.118
+			miracle:EN		0.118
+		MAX DEPTH: 3
+			me:EN		0.033
+			keep:EN		0.024
+			love:EN		0.023
+			break:EN		0.021
+			lie:EN		0.020
+		TVD: 0.765
+		RBD: 0.765
+		APK: 0.875
+	CUE: quality:EN
+		GOLD
+			quantity:EN		0.270
+			good:EN		0.162
+			clothes:EN		0.108
+			expensive:EN		0.081
+			book:EN		0.054
+		MAX DEPTH: 3
+			quantity:EN		0.153
+			good:EN		0.079
+			street:EN		0.069
+			bad:EN		0.044
+			amount:EN		0.037
+		TVD: 0.579
+		RBD: 0.555
+		APK: 0.818
+	CUE: ready:EN
+		GOLD
+			go:EN		0.440
+			finished:EN		0.120
+			now:EN		0.120
+			allright:EN		0.080
+			love:EN		0.080
+		MAX DEPTH: 3
+			go:EN		0.120
+			steady:EN		0.102
+			prepared:EN		0.043
+			now:EN		0.035
+			no:EN		0.033
+		TVD: 0.511
+		RBD: 0.482
+		APK: 0.607
+	CUE: reasonable:EN
+		GOLD
+			unreasonable:EN		0.467
+			allright:EN		0.133
+			think:EN		0.133
+			understandable:EN		0.133
+			understanding:EN		0.133
+		MAX DEPTH: 3
+			unreasonable:EN		0.129
+			fair:EN		0.101
+			o.k.:EN		0.064
+			good:EN		0.041
+			right:EN		0.039
+		TVD: 0.655
+		RBD: 0.679
+		APK: 0.800
+	CUE: refuse:EN
+		GOLD
+			accept:EN		0.333
+			abuse:EN		0.167
+			demand:EN		0.167
+			proposal:EN		0.167
+			stop:EN		0.167
+		MAX DEPTH: 3
+			no:EN		0.146
+			yes:EN		0.076
+			rubbish:EN		0.042
+			reject:EN		0.042
+			deny:EN		0.038
+		TVD: 1.000
+		RBD: 0.816
+		APK: 1.000
+	CUE: revenge:EN
+		GOLD
+			anger:EN		0.226
+			hate:EN		0.226
+			murder:EN		0.161
+			angry:EN		0.097
+			nerds:EN		0.097
+		MAX DEPTH: 3
+			sweet:EN		0.085
+			hate:EN		0.083
+			ship:EN		0.052
+			love:EN		0.051
+			vendetta:EN		0.044
+		TVD: 0.702
+		RBD: 0.660
+		APK: 0.896
+	CUE: rifle:EN
+		GOLD
+			gun:EN		0.697
+			knife:EN		0.121
+			danger:EN		0.061
+			shoot:EN		0.061
+			whistle:EN		0.061
+		MAX DEPTH: 3
+			gun:EN		0.222
+			shoot:EN		0.057
+			shot:EN		0.052
+			range:EN		0.043
+			bang:EN		0.041
+		TVD: 0.405
+		RBD: 0.529
+		APK: 0.600
+	CUE: rose:EN
+		GOLD
+			flower:EN		0.481
+			red:EN		0.154
+			garden:EN		0.135
+			smell:EN		0.115
+			pink:EN		0.077
+		MAX DEPTH: 3
+			red:EN		0.159
+			flower:EN		0.070
+			blue:EN		0.046
+			black:EN		0.044
+			white:EN		0.043
+		TVD: 0.579
+		RBD: 0.402
+		APK: 0.583
+	CUE: rotten:EN
+		GOLD
+			apple:EN		0.815
+			eggs:EN		0.185
+		MAX DEPTH: 3
+			apple:EN		0.181
+			egg:EN		0.095
+			bad:EN		0.066
+			pear:EN		0.041
+			core:EN		0.032
+		TVD: 0.345
+		RBD: 0.450
+		APK: 0.500
+	CUE: season:EN
+		GOLD
+			winter:EN		0.414
+			summer:EN		0.328
+			spring:EN		0.121
+			sun:EN		0.069
+			autumn:EN		0.034
+		MAX DEPTH: 3
+			pepper:EN		0.094
+			salt:EN		0.090
+			summer:EN		0.057
+			winter:EN		0.047
+			year:EN		0.040
+		TVD: 0.609
+		RBD: 0.512
+		APK: 0.778
+	CUE: shame:EN
+		GOLD
+			red:EN		0.625
+			guilt:EN		0.188
+			afraid:EN		0.062
+			doubt:EN		0.062
+			mistake:EN		0.062
+		MAX DEPTH: 3
+			blush:EN		0.132
+			red:EN		0.045
+			guilt:EN		0.042
+			pity:EN		0.041
+			sorrow:EN		0.034
+		TVD: 0.702
+		RBD: 0.602
+		APK: 0.767
+	CUE: shop:EN
+		GOLD
+			buy:EN		0.267
+			window:EN		0.133
+			buying:EN		0.100
+			store:EN		0.100
+			centre:EN		0.067
+		MAX DEPTH: 3
+			window:EN		0.046
+			buy:EN		0.045
+			store:EN		0.035
+			money:EN		0.031
+			house:EN		0.029
+		TVD: 0.490
+		RBD: 0.401
+		APK: 0.537
+	CUE: shoulder:EN
+		GOLD
+			cry:EN		0.255
+			body:EN		0.216
+			arm:EN		0.176
+			head:EN		0.118
+			neck:EN		0.078
+		MAX DEPTH: 3
+			arm:EN		0.099
+			blade:EN		0.082
+			leg:EN		0.037
+			head:EN		0.032
+			broad:EN		0.032
+		TVD: 0.677
+		RBD: 0.641
+		APK: 0.766
+	CUE: sing:EN
+		GOLD
+			song:EN		0.800
+			bird:EN		0.067
+			singer:EN		0.067
+			talk:EN		0.067
+		MAX DEPTH: 3
+			song:EN		0.245
+			music:EN		0.051
+			choir:EN		0.047
+			dance:EN		0.026
+			tune:EN		0.025
+		TVD: 0.336
+		RBD: 0.365
+		APK: 0.750
+	CUE: skirt:EN
+		GOLD
+			trousers:EN		0.471
+			clothes:EN		0.098
+			shirt:EN		0.078
+			dirty:EN		0.039
+			dress:EN		0.039
+		MAX DEPTH: 3
+			mini:EN		0.098
+			girl:EN		0.076
+			short:EN		0.063
+			leg:EN		0.060
+			woman:EN		0.056
+		TVD: 0.882
+		RBD: 0.813
+		APK: 0.861
+	CUE: slave:EN
+		GOLD
+			black:EN		0.314
+			master:EN		0.171
+			africa:EN		0.143
+			negro:EN		0.143
+			prison:EN		0.114
+		MAX DEPTH: 3
+			black:EN		0.084
+			master:EN		0.055
+			girl:EN		0.054
+			white:EN		0.050
+			chain:EN		0.030
+		TVD: 0.580
+		RBD: 0.504
+		APK: 0.714
+	CUE: slippery:EN
+		GOLD
+			wet:EN		0.269
+			road:EN		0.231
+			car:EN		0.115
+			people:EN		0.115
+			snow:EN		0.115
+		MAX DEPTH: 3
+			ice:EN		0.097
+			slope:EN		0.066
+			wet:EN		0.042
+			fall:EN		0.031
+			slide:EN		0.028
+		TVD: 0.786
+		RBD: 0.757
+		APK: 0.912
+	CUE: sneeze:EN
+		GOLD
+			cold:EN		0.583
+			cough:EN		0.125
+			nose:EN		0.125
+			kill:EN		0.083
+			sick:EN		0.083
+		MAX DEPTH: 3
+			cold:EN		0.217
+			cough:EN		0.149
+			hot:EN		0.073
+			nose:EN		0.030
+			handkerchief:EN		0.027
+		TVD: 0.377
+		RBD: 0.308
+		APK: 0.450
+	CUE: snow:EN
+		GOLD
+			white:EN		0.519
+			winter:EN		0.231
+			skiing:EN		0.115
+			rain:EN		0.058
+			ice:EN		0.038
+		MAX DEPTH: 3
+			white:EN		0.284
+			black:EN		0.134
+			ice:EN		0.051
+			cold:EN		0.042
+			fall:EN		0.026
+		TVD: 0.451
+		RBD: 0.517
+		APK: 0.722
+	CUE: spread:EN
+		GOLD
+			bread:EN		0.273
+			sandwich:EN		0.273
+			legs:EN		0.136
+			sheet:EN		0.136
+			out:EN		0.091
+		MAX DEPTH: 3
+			butter:EN		0.141
+			out:EN		0.066
+			bread:EN		0.057
+			jam:EN		0.056
+			cheese:EN		0.050
+		TVD: 0.766
+		RBD: 0.663
+		APK: 0.806
+	CUE: steal:EN
+		GOLD
+			thief:EN		0.350
+			bike:EN		0.150
+			heavy:EN		0.100
+			metal:EN		0.100
+			money:EN		0.100
+		MAX DEPTH: 3
+			thief:EN		0.131
+			theft:EN		0.043
+			money:EN		0.040
+			take:EN		0.036
+			pinch:EN		0.034
+		TVD: 0.550
+		RBD: 0.611
+		APK: 0.762
+	CUE: strange:EN
+		GOLD
+			people:EN		0.286
+			weird:EN		0.286
+			man:EN		0.143
+			normal:EN		0.095
+			person:EN		0.095
+		MAX DEPTH: 3
+			odd:EN		0.151
+			queer:EN		0.083
+			peculiar:EN		0.044
+			funny:EN		0.041
+			even:EN		0.039
+		TVD: 0.917
+		RBD: 0.779
+		APK: 0.972
+	CUE: strict:EN
+		GOLD
+			rule:EN		0.278
+			rules:EN		0.278
+			forbidden:EN		0.111
+			law:EN		0.111
+			order:EN		0.111
+		MAX DEPTH: 3
+			hard:EN		0.073
+			school:EN		0.056
+			severe:EN		0.040
+			discipline:EN		0.040
+			stern:EN		0.040
+		TVD: 1.000
+		RBD: 0.796
+		APK: 1.000
+	CUE: stubborn:EN
+		GOLD
+			child:EN		0.286
+			monkey:EN		0.286
+			angry:EN		0.143
+			difficult:EN		0.143
+			people:EN		0.143
+		MAX DEPTH: 3
+			mule:EN		0.225
+			obstinate:EN		0.074
+			donkey:EN		0.064
+			hard:EN		0.053
+			as:EN		0.042
+		TVD: 1.000
+		RBD: 0.978
+		APK: 1.000
+	CUE: succeed:EN
+		GOLD
+			career:EN		0.278
+			fail:EN		0.222
+			success:EN		0.222
+			work:EN		0.167
+			happy:EN		0.111
+		MAX DEPTH: 3
+			fail:EN		0.114
+			win:EN		0.107
+			lose:EN		0.077
+			success:EN		0.055
+			pas:EN		0.038
+		TVD: 0.636
+		RBD: 0.566
+		APK: 0.700
+	CUE: swim:EN
+		GOLD
+			water:EN		0.697
+			pool:EN		0.121
+			sea:EN		0.121
+			swimmingpool:EN		0.061
+		MAX DEPTH: 3
+			water:EN		0.113
+			sea:EN		0.095
+			sink:EN		0.081
+			drown:EN		0.039
+			wet:EN		0.031
+		TVD: 0.536
+		RBD: 0.329
+		APK: 0.500
+	CUE: thick:EN
+		GOLD
+			thin:EN		0.829
+			fat:EN		0.114
+			man:EN		0.057
+		MAX DEPTH: 3
+			thin:EN		0.483
+			fat:EN		0.129
+			head:EN		0.031
+			stupid:EN		0.024
+			man:EN		0.023
+		TVD: 0.135
+		RBD: 0.051
+		APK: 0.333
+	CUE: throw:EN
+		GOLD
+			ball:EN		0.769
+			away:EN		0.154
+			dice:EN		0.077
+		MAX DEPTH: 3
+			ball:EN		0.139
+			stone:EN		0.048
+			up:EN		0.041
+			chuck:EN		0.040
+			catch:EN		0.033
+		TVD: 0.390
+		RBD: 0.400
+		APK: 0.667
+	CUE: train:EN
+		GOLD
+			rails:EN		0.231
+			car:EN		0.154
+			bus:EN		0.103
+			holiday:EN		0.051
+			passenger:EN		0.051
+		MAX DEPTH: 3
+			engine:EN		0.060
+			fast:EN		0.054
+			station:EN		0.052
+			car:EN		0.034
+			journey:EN		0.032
+		TVD: 0.820
+		RBD: 0.848
+		APK: 0.949
+	CUE: tree:EN
+		GOLD
+			apple:EN		0.234
+			green:EN		0.191
+			park:EN		0.106
+			flower:EN		0.085
+			leaf:EN		0.085
+		MAX DEPTH: 3
+			leaf:EN		0.118
+			green:EN		0.102
+			wood:EN		0.066
+			branch:EN		0.049
+			flower:EN		0.030
+		TVD: 0.661
+		RBD: 0.616
+		APK: 0.764
+	CUE: tremble:EN
+		GOLD
+			shake:EN		0.500
+			fingers:EN		0.200
+			afraid:EN		0.100
+			cold:EN		0.100
+			fall:EN		0.100
+		MAX DEPTH: 3
+			fear:EN		0.185
+			shake:EN		0.129
+			shiver:EN		0.040
+			cold:EN		0.032
+			milk:EN		0.027
+		TVD: 0.610
+		RBD: 0.583
+		APK: 0.800
+	CUE: truth:EN
+		GOLD
+			dare:EN		0.270
+			honest:EN		0.189
+			lie:EN		0.162
+			court:EN		0.108
+			false:EN		0.081
+		MAX DEPTH: 3
+			lie:EN		0.273
+			false:EN		0.060
+			down:EN		0.048
+			honesty:EN		0.028
+			good:EN		0.022
+		TVD: 0.713
+		RBD: 0.667
+		APK: 0.696
+	CUE: understand:EN
+		GOLD
+			question:EN		0.231
+			belief:EN		0.154
+			difficult:EN		0.154
+			know:EN		0.154
+			people:EN		0.154
+		MAX DEPTH: 3
+			comprehend:EN		0.214
+			know:EN		0.136
+			no:EN		0.048
+			think:EN		0.041
+			misunderstand:EN		0.027
+		TVD: 0.846
+		RBD: 0.868
+		APK: 0.917
+	CUE: vague:EN
+		GOLD
+			clear:EN		0.625
+			mist:EN		0.250
+			figure:EN		0.125
+		MAX DEPTH: 3
+			misty:EN		0.075
+			hazy:EN		0.054
+			unsure:EN		0.043
+			uncertain:EN		0.040
+			unclear:EN		0.036
+		TVD: 1.000
+		RBD: 0.871
+		APK: 1.000
+	CUE: white:EN
+		GOLD
+			black:EN		0.735
+			blue:EN		0.147
+			snow:EN		0.118
+		MAX DEPTH: 3
+			black:EN		0.542
+			red:EN		0.046
+			snow:EN		0.042
+			sheet:EN		0.031
+			ice:EN		0.024
+		TVD: 0.199
+		RBD: 0.138
+		APK: 0.444
+	CUE: winter:EN
+		GOLD
+			summer:EN		0.596
+			cold:EN		0.158
+			snow:EN		0.105
+			season:EN		0.053
+			spring:EN		0.053
+		MAX DEPTH: 3
+			summer:EN		0.162
+			snow:EN		0.140
+			cold:EN		0.100
+			white:EN		0.069
+			black:EN		0.047
+		TVD: 0.445
+		RBD: 0.357
+		APK: 0.500
+	CUE: wrong:EN
+		GOLD
+			right:EN		0.818
+			answer:EN		0.061
+			fault:EN		0.061
+			good:EN		0.061
+		MAX DEPTH: 3
+			right:EN		0.568
+			left:EN		0.082
+			civil:EN		0.042
+			bad:EN		0.019
+			human:EN		0.018
+		TVD: 0.200
+		RBD: 0.635
+		APK: 0.750
+	CUE: yellow:EN
+		GOLD
+			green:EN		0.432
+			blue:EN		0.243
+			sun:EN		0.189
+			colour:EN		0.081
+			black:EN		0.054
+		MAX DEPTH: 3
+			black:EN		0.075
+			red:EN		0.068
+			blue:EN		0.055
+			green:EN		0.053
+			white:EN		0.045
+		TVD: 0.583
+		RBD: 0.347
+		APK: 0.517
+	Total variation distance: 0.627
+	Rank-biased distance: 0.570
+	Average precision (distance): 0.733
+TVD t-test: T=-1.97, p=0.051
+RBD t-test: T=-3.41, p=0.001
+APK t-test: T=0.01, p=0.995
