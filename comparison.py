@@ -205,30 +205,44 @@ def read_aggregated_test_data():
 
 if __name__ == "__main__":
 
-    EE_session = read_test_data()
+    test_data_session = read_test_data()
     #tvds2, rbds2, apks2 = get_diff(DD[2], DD[1], test_words)
 
     #print(ttest_rel([i[1] for i in tvds], [j[1] for j in tvds2]))
     #print(ttest_rel([i[1] for i in rbds], [j[1] for j in rbds2]))
     #print(ttest_rel([i[1] for i in apks], [j[1] for j in apks2]))
 
-    test_data = read_aggregated_test_data()['EE']
+    test_data_aggregated = read_aggregated_test_data()['EE']
     #norm_data = read_norm_data("./Dutch/shrunkdutch2.csv")
-    #norm_data = read_norm_data("./EAT/shrunkEAT.net_plain")
+    norm_data_eat = read_norm_data("./EAT/shrunkEAT.net_plain")
+
     with open("southflor.pickle",'rb') as fn:
-        norm_data = pickle.load(fn, encoding="latin1")
+        norm_data_sf = pickle.load(fn, encoding="latin1")
 
-    test_words = set(EE_session[2].keys()).intersection(set(norm_data.keys()))
-    tvds, rbds, apks = get_diff(EE_session[2], EE_session[0], test_words)
-    tvds2, rbds2, apks2 = get_diff(test_data, norm_data, test_words)
+    #test_words = set(EE_session[2].keys()).intersection(set(norm_data.keys()))
+    #tvds, rbds, apks = get_diff(EE_session[2], EE_session[0], test_words)
 
+    test_words = set(test_data_aggregated.keys()).intersection(set(norm_data_eat.keys())).intersection(set(norm_data_sf.keys()))
+    tvds, rbds, apks = get_diff(test_data_aggregated, norm_data_eat, test_words)
+    tvds2, rbds2, apks2 = get_diff(test_data_aggregated, norm_data_sf, test_words)
+
+    # print("TVD MEANS: in-group: %.3f, out-group, %.3f" % (np.mean([i[1] for i in tvds]), np.mean([i[1] for i in tvds2])))
+    # print(ttest_rel([i[1] for i in tvds], [j[1] for j in tvds2]))
+    # print("RBD MEANS: in-group: %.3f, out-group, %.3f" % (np.mean([i[1] for i in rbds]), np.mean([i[1] for i in rbds2])))
+    # print(ttest_rel([i[1] for i in rbds], [j[1] for j in rbds2]))
+    # print("APK MEANS: in-group: %.3f, out-group, %.3f" % (np.mean([i[1] for i in apks]), np.mean([i[1] for i in apks2])))
+    # print(ttest_rel([i[1] for i in apks], [j[1] for j in apks2]))
+
+    # print(sorted([(tvds[idx][0], tvds2[idx][1] - tvds[idx][1]) for idx in range(len(tvds))], key=lambda x: -x[1])[:10])
+    # print(sorted([(rbds[idx][0], rbds2[idx][1] - rbds[idx][1]) for idx in range(len(rbds))], key=lambda x: -x[1])[:10])
+    # print(sorted([(apks[idx][0], apks2[idx][1] - apks[idx][1]) for idx in range(len(apks))], key=lambda x: -x[1])[:10])
+
+    test_words = test_data_session[2].keys()
+    tvds, rbds, apks = get_diff(test_data_session[0], test_data_session[1], test_words)
+    tvds2, rbds2, apks2 = get_diff(test_data_session[0], test_data_session[2], test_words)
     print("TVD MEANS: in-group: %.3f, out-group, %.3f" % (np.mean([i[1] for i in tvds]), np.mean([i[1] for i in tvds2])))
     print(ttest_rel([i[1] for i in tvds], [j[1] for j in tvds2]))
     print("RBD MEANS: in-group: %.3f, out-group, %.3f" % (np.mean([i[1] for i in rbds]), np.mean([i[1] for i in rbds2])))
     print(ttest_rel([i[1] for i in rbds], [j[1] for j in rbds2]))
     print("APK MEANS: in-group: %.3f, out-group, %.3f" % (np.mean([i[1] for i in apks]), np.mean([i[1] for i in apks2])))
     print(ttest_rel([i[1] for i in apks], [j[1] for j in apks2]))
-
-    print(sorted([(tvds[idx][0], tvds2[idx][1] - tvds[idx][1]) for idx in range(len(tvds))], key=lambda x: -x[1])[:10])
-    print(sorted([(rbds[idx][0], rbds2[idx][1] - rbds[idx][1]) for idx in range(len(rbds))], key=lambda x: -x[1])[:10])
-    print(sorted([(apks[idx][0], apks2[idx][1] - apks[idx][1]) for idx in range(len(apks))], key=lambda x: -x[1])[:10])
