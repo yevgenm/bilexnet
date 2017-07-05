@@ -227,11 +227,11 @@ class LexNetMo(LexNet):
 
 class LexNetBi(LexNet):
 
-    def __init__(self, fn_l1, fn_l2, l2_l1_dic, TE_assoc_ratio, orth_assoc_ratio, asymm_ratio):
+    def __init__(self, fn_l1, fn_l2, l2_l1_dic, TE_assoc_ratio, orth_assoc_ratio, asymm_ratio,L2_links):
         super().__init__()
         self.min_lev = parameters["orthographic threshold"]
         self.G = self.construct_bilingual_graph(fn_l1, fn_l2, l2_l1_dic, TE_assoc_ratio, orth_assoc_ratio, asymm_ratio)
-
+        self.L2_links = L2_links
     def get_assoc_edges(self, fn, lang):
         l = extras["language mapping"][lang]
         df = pandas.read_csv(fn, sep=";", na_values="", keep_default_na=False)
@@ -277,7 +277,10 @@ class LexNetBi(LexNet):
             edges_nl, vertices_nl = self.get_assoc_edges(fn_nl, "D")
             # edges_en, vertices_en = self.get_assoc_edges(fn_en + "_plain", "E")
             edges_en, vertices_en = self.get_assoc_edges(fn_en, "E")
-
+            
+            if self.L2_links == False:
+                edges_en = []
+            
             orth_edges = self.get_orth_edges(vertices_en, vertices_nl, orth_assoc_ratio)
             TE_edges = self.get_TE_edges(vertices_en, vertices_nl, en_nl_dic, TE_assoc_ratio, asymm_ratio)
             crossling_edges = [(k[0], k[1], v) for k, v in (Counter(TE_edges) + Counter(orth_edges)).items()]
