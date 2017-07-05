@@ -7,7 +7,7 @@ def test_model(args):
     test_list, test_condition, fn_nl, fn_en, en_nl_dic, tvd_base, rbd_base, apk_base, gold_dict, TE_assoc_ratio, orth_assoc_ratio, asymm_ratio = args
     log_fn = "./results/log_" + test_condition + "_TE_" + str(TE_assoc_ratio) + "_orth_" + str(orth_assoc_ratio) + "_asymm_" + str(asymm_ratio)
     log_file = open(log_fn, "w")
-    biling = LexNetBi(fn_nl, fn_en, en_nl_dic, TE_assoc_ratio, orth_assoc_ratio, asymm_ratio)
+    biling = LexNetBi(fn_nl, fn_en, en_nl_dic, TE_assoc_ratio, orth_assoc_ratio, asymm_ratio, False)
 
     log_file.write("NET:%s, DEPTH:%i, TE:%i, ORTH:%i\n" % ("bi", parameters["model depth"], TE_assoc_ratio, orth_assoc_ratio))
     tvd_m, rbd_m, apk_m = biling.test_network(test_list, parameters["model depth"], test_condition, gold_full=gold_dict, verbose=True, log_file=log_file)
