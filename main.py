@@ -23,7 +23,8 @@ def test_model(args):
 
 def main():
 
-    fn_en = "./EAT/shrunkEAT.net"
+    #fn_en = "./EAT/shrunkEAT.net"
+    fn_en = "./SF_norms/sothflorida_complete.csv"
     fn_nl = "./Dutch/shrunkdutch2.csv"
 
     en_nl_dic = utils.read_dict("./dict/dictionary.csv")
@@ -68,7 +69,7 @@ def main():
         meta_args = [test_list, test_condition, fn_nl, fn_en, en_nl_dic, tvd_base, rbd_base, apk_base, gold_dict]
 
         par = [ [TE_assoc_ratio, orth_assoc_ratio, asymm_ratio]
-                       for TE_assoc_ratio in [1, 3, 5, 7, 10]
+                       for TE_assoc_ratio in [5, 10, 50, 100, 500]
                        for orth_assoc_ratio in [1, 3, 5, 7, 10]
                        for asymm_ratio in [1, 3, 5, 7, 10] ]
 

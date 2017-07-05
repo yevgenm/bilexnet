@@ -59,10 +59,10 @@ class LexNet:
             final_vertices = dict(sum((Counter(x) for x in [responses_current_level, responses_next_level]), Counter()))
             return (final_vertices)
 
-    def plot_activation(self, responses, G_sub, depth):
+    def plot_activation(self, responses, vertices, edges, depth):
         # An auxiliary function that spreads activation for plotting a subgraph.
         if depth == 0:
-            return ({}, G_sub)
+            return ({}, vertices, edges)
         else:
             responses_current_level = dict()
             for vertex in sorted(responses):
@@ -77,31 +77,29 @@ class LexNet:
                 else:
                     responses_single_word = {k: v / total * weight * self.alpha for k, v in new.items()}
                     for resp, wei in responses_single_word.items():
-                        if resp not in G_sub.vs['name']:
-                            G_sub.add_vertex(name=resp)
-                        if wei > 0.005:
-                            e = G_sub.get_eid(G_sub.vs.find(name=vertex), G_sub.vs.find(name=resp), directed=True,
-                                              error=False)
-                            if e != -1:
-                                G_sub.es[e]['weight'] += wei
-                            else:
-                                G_sub.add_edge(vertex, resp, weight=wei)
+                        if resp not in vertices:
+                            vertices.append(resp)
+                            if (vertex, resp) not in edges:
+                                edges[(vertex, resp)] = 0
+                            edges[(vertex, resp)] += wei
                 responses_current_level = dict(
                     sum((Counter(x) for x in [responses_current_level, responses_single_word]), Counter()))
             if not responses_current_level:
-                return ({}, G_sub)
+                return ({}, vertices, edges)
             else:
-                responses_next_level, G_sub = self.plot_activation(responses_current_level, G_sub, depth - 1)
+                responses_next_level, vertices, edges = self.plot_activation(responses_current_level, vertices, edges, depth - 1)
             final_vertices = dict(sum((Counter(x) for x in [responses_current_level, responses_next_level]), Counter()))
-            return (final_vertices, G_sub)
+            return (final_vertices, vertices, edges)
 
     def plot_subgraph(self, w, depth, name):
         # Traverses the graph for a given word and plots the resulting subgraph into a file. Needs to be tested.
         starting_vertex = {w: 1}
-        G_sub = Graph(directed=True)
-        G_sub.add_vertices(w)
-        G_sub.vs["name"] = [w]
-        responses, G_sub = self.plot_activation(starting_vertex, G_sub, depth)
+        #G_sub = Graph(directed=True)
+        #G_sub.add_vertices(w)
+        #G_sub.vs["name"] = [w]
+        responses, vertices, edges = self.plot_activation(starting_vertex, [w], {}, depth)
+        edges_filtered = [(k[0],k[1],v) for k,v in edges.items() if v > 0.005]
+        G_sub = Graph.TupleList(edges=edges_filtered, edge_attrs="weight", directed=True)
         visual_style = {}
         visual_style["vertex_size"] = 10
         visual_style["vertex_label"] = G_sub.vs["name"]
@@ -205,9 +203,10 @@ class LexNetMo(LexNet):
             if language == "nl":
                 G = self.construct_graph(fn, "NL")
             else: #language == "en"
-                if not os.path.isfile(fn + "_plain"):
-                    convert_pajek(fn)
-                G = self.construct_graph(fn + "_plain", "EN")
+                # if not os.path.isfile(fn + "_plain"):
+                #     convert_pajek(fn)
+                # G = self.construct_graph(fn + "_plain", "EN")
+                G = self.construct_graph(fn, "EN")
             G.write_pickle(fn + "_pickled")
         return(G)
 
@@ -215,7 +214,9 @@ class LexNetMo(LexNet):
         # Constructs the big monolingual graph from CSV.
         df = pandas.read_csv(fn, sep=";", na_values="", keep_default_na=False)
         edges = Counter()
-        for i in range(1, 4):
+        # for i in range(1, 4):
+        # First response only:
+        for i in range(1, 2):
             edges.update(zip(df['cue'], df['asso' + str(i)]))
         weighted_edges = [(e[0][0] + ":" + lang, e[0][1] + ":" + lang, e[1]) for e in edges.items() if
                           e[0][1] not in extras["noise list"] and e[1] > self.min_freq]
@@ -235,12 +236,15 @@ class LexNetBi(LexNet):
         l = extras["language mapping"][lang]
         df = pandas.read_csv(fn, sep=";", na_values="", keep_default_na=False)
         edges = Counter()
-        for i in range(1, 4):
+        # for i in range(1, 4):
+        # First response only:
+        for i in range(1, 2):
             edges.update(zip(df['cue'], df['asso' + str(i)]))
         weighted_edges = [(e[0][0] + l, e[0][1] + l, e[1]) for e in edges.items() if e[0][1] not in
                              extras["noise list"] and e[1] > self.min_freq]
         vertices = [word + extras["language mapping"][lang] for word in
                        set.union(set(df['cue']), set(df['asso1']), set(df['asso2']), set(df['asso3']))]
+        weighted_edges = utils.normalize_tuple_list(weighted_edges, 1)
         return weighted_edges, vertices
 
     def get_orth_edges(self, vertices_en, vertices_nl, orth_assoc_ratio):
@@ -271,7 +275,8 @@ class LexNetBi(LexNet):
         else:
 
             edges_nl, vertices_nl = self.get_assoc_edges(fn_nl, "D")
-            edges_en, vertices_en = self.get_assoc_edges(fn_en + "_plain", "E")
+            # edges_en, vertices_en = self.get_assoc_edges(fn_en + "_plain", "E")
+            edges_en, vertices_en = self.get_assoc_edges(fn_en, "E")
 
             orth_edges = self.get_orth_edges(vertices_en, vertices_nl, orth_assoc_ratio)
             TE_edges = self.get_TE_edges(vertices_en, vertices_nl, en_nl_dic, TE_assoc_ratio, asymm_ratio)
