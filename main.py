@@ -2,14 +2,16 @@ from networks_igraph import *
 from multiprocessing import Pool
 from parameters import *
 
+res_dir = "./results_test_lemmatized/"
+
 def test_model(args):
 
-    test_list, test_condition, fn_nl, fn_en, en_nl_dic, tvd_base, rbd_base, apk_base, gold_dict, TE_assoc_ratio, orth_assoc_ratio, asymm_ratio = args
-    log_fn = "./results/log_" + test_condition + "_TE_" + str(TE_assoc_ratio) + "_orth_" + str(orth_assoc_ratio) + "_asymm_" + str(asymm_ratio)
+    test_list, test_condition, fn_nl, fn_en, en_nl_dic, tvd_base, rbd_base, apk_base, gold_dict, assoc_coeff, TE_coeff, orth_coeff, asymm_ratio = args
+    log_fn = res_dir + "log_" + test_condition + "_assoc_" + str(assoc_coeff) + "_TE_" + str(TE_coeff) + "_orth_" + str(orth_coeff) + "_asymm_" + str(asymm_ratio)
     log_file = open(log_fn, "w")
-    biling = LexNetBi(fn_nl, fn_en, en_nl_dic, TE_assoc_ratio, orth_assoc_ratio, asymm_ratio, False)
+    biling = LexNetBi(fn_nl, fn_en, en_nl_dic, assoc_coeff, TE_coeff, orth_coeff, asymm_ratio)
 
-    log_file.write("NET:%s, DEPTH:%i, TE:%i, ORTH:%i\n" % ("bi", parameters["model depth"], TE_assoc_ratio, orth_assoc_ratio))
+    log_file.write("NET:%s, DEPTH:%i, ASSOC: %i, TE:%i, ORTH:%i, ASYMM: %i\n" % ("bi", parameters["model depth"], assoc_coeff, TE_coeff, orth_coeff, asymm_ratio))
     tvd_m, rbd_m, apk_m = biling.test_network(test_list, parameters["model depth"], test_condition, gold_full=gold_dict, verbose=True, log_file=log_file)
 
     log_file.write("TVD t-test: T=%.2f, p=%.3f\n" % (ttest_rel(tvd_base, tvd_m)[0], ttest_rel(tvd_base, tvd_m)[1]))
@@ -18,12 +20,18 @@ def test_model(args):
 
     log_file.close()
 
-    return(TE_assoc_ratio, orth_assoc_ratio, asymm_ratio, tvd_m, rbd_m, apk_m)
+    return(assoc_coeff, TE_coeff, orth_coeff, asymm_ratio, tvd_m, rbd_m, apk_m)
 
 
 def main():
 
     #fn_en = "./EAT/shrunkEAT.net"
+    if os.path.exists(res_dir):
+        if os.listdir(res_dir) != []:
+            sys.exit("Result directory not empty!")
+    else:
+        os.makedirs(res_dir)
+
     fn_en = "./SF_norms/sothflorida_complete.csv"
     fn_nl = "./Dutch/shrunkdutch2.csv"
 
@@ -48,18 +56,18 @@ def main():
         test_list = test_wordlist[cue_lang]
 
         if cue_lang==target_lang:
-            if os.path.isfile("./results/log_baseline_"+test_condition):
+            if os.path.isfile(res_dir + "log_baseline_"+test_condition):
                 tvd_base, rbd_base, apk_base = monoling[target_lang].test_network(test_list, parameters["baseline depth"], test_condition, gold_full=gold_dict, verbose=False)
             else:
-                log_base_file = open("./results/log_baseline_"+test_condition, 'w')
+                log_base_file = open(res_dir + "log_baseline_"+test_condition, 'w')
                 log_base_file.write("NET:%s, DEPTH:%i\n" % (target_lang, parameters["baseline depth"]))
                 tvd_base, rbd_base, apk_base = monoling[target_lang].test_network(test_list, parameters["baseline depth"], test_condition, gold_full=gold_dict, verbose=True, log_file=log_base_file)
                 log_base_file.close()
         else:
             tvd_base = rbd_base = apk_base = [0]*len(test_list)
 
-        log_per_word = open("./results/log_per_word_"+test_condition, 'w')
-        log_per_word.write("TE\torth\tasymm\t")
+        log_per_word = open(res_dir + "log_per_word_"+test_condition+".tsv", 'w')
+        log_per_word.write("assoc\tTE\torth\tasymm\t")
         for w in test_list:
             log_per_word.write("%s (tvd)\t%s (rbd)\t%s (apk)\t" % (w, w, w))
 
@@ -68,10 +76,13 @@ def main():
 
         meta_args = [test_list, test_condition, fn_nl, fn_en, en_nl_dic, tvd_base, rbd_base, apk_base, gold_dict]
 
-        par = [ [TE_assoc_ratio, orth_assoc_ratio, asymm_ratio]
-                       for TE_assoc_ratio in [5]
-                       for orth_assoc_ratio in [1]
-                       for asymm_ratio in [1] ]
+        par = [ [assoc_coeff, TE_coeff, orth_coeff, asymm_ratio]
+                for assoc_coeff in [0, 1, 2, 3, 5, 10, 20, 50, 100, 500]
+                for TE_coeff in [1, 2, 3, 5, 10]
+                for orth_coeff in [0, 1, 2, 3, 5, 10]
+                for asymm_ratio in [1, 2, 3, 5, 10]
+                if assoc_coeff==1 or not (assoc_coeff==TE_coeff and TE_coeff==orth_coeff) ]
+
 
         args = [meta_args + par_set for par_set in par]
 
@@ -79,8 +90,8 @@ def main():
         #    run_test(a)
 
         pool = Pool(5)
-        for TE_assoc_ratio, orth_assoc_ratio, asymm_ratio, tvd_m, rbd_m, apk_m in pool.imap(test_model, args):
-            log_per_word.write("%d\t%d\t%d\t" % (TE_assoc_ratio, orth_assoc_ratio, asymm_ratio))
+        for assoc_coeff, TE_coeff, orth_coeff, asymm_ratio, tvd_m, rbd_m, apk_m in pool.imap(test_model, args):
+            log_per_word.write("%d\t%d\t%d\t%d\t" % (assoc_coeff, TE_coeff, orth_coeff, asymm_ratio))
             for idx in range(len(test_list)):
                 log_per_word.write("%.3f\t%.3f\t%.3f\t" % (tvd_m[idx] - tvd_base[idx], rbd_m[idx] - rbd_base[idx], apk_m[idx] - apk_base[idx]))
             log_per_word.write("\n")
