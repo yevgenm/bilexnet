@@ -6,6 +6,23 @@ import pickle
 import numpy as np
 import csv
 import editdistance
+from igraph import *
+import csv
+import os
+from collections import Counter
+import utils
+import pandas
+import ml_metrics as metrics
+import random
+from scipy.stats import ttest_rel
+import numpy as np
+from pajek_converter import convert_pajek
+import pickle
+import itertools
+import copy
+import pickle
+import sys
+from os import listdir
 
 def counter():
     fil = open("associationDataLemmas.csv", "r")
@@ -108,5 +125,86 @@ def levdist():
             #malemad.append((engw,dutchw, lcs(engw,dutchw)))
     return lev , malemad 
                 
+                
+def southlev():
+    FILES = ["Cue_Target_Pairs.txt", "Cue_Target_Pairs1.txt", "Cue_Target_Pairs2.txt", "Cue_Target_Pairs3.txt", "Cue_Target_Pairs4.txt" , "Cue_Target_Pairs5.txt", "Cue_Target_Pairs6.txt","Cue_Target_Pairs7.txt"]
+
+    DICT = dict()
+    with open('southflor.lev.csv', 'w') as handle:
+        
+        
+        count = 0
+        for fil in FILES:
+            print(fil)
+            f = open(fil, "r",encoding="latin-1")
+            l = f.readlines()
+            l = l[4:-3]
+            print(len(l))
+            for line in l:
+                line = line
+                line = line.split(",")
+                cue = line[0].lower().strip()
+                target = line[1].lower().strip()
+                
+                
+                levi = 1 - ((editdistance.eval(target,cue))/ max(len(cue),len(target)))
+                print(levi,target, cue)
+                if levi>=0.5:
+                    handle.write(target + ',' + cue + ',' + str(levi)+'\n')
+                
+                
+        print(count)
+
+    
+    
+    
+    
+def cognates():
+    fil = open('dict/dictionary.csv')
+    l = fil.readlines()
+    l = l[1:]
+    dic = {}
+    for i in l:
+        line = i.strip('\n')
+        line = line.strip('\t')
+        line = line.split(',')
+        
+        if line[0] not in dic:
+            dic[line[0]] = []
+            dic[line[0]].append(line[1].strip())
+            #print(dic,'ssssssssssssssssssssssss')
+            
+        else:
+            #print(dic,'ssssssssssssssssssssssss')
+            dic[line[0]].append(line[1].strip())
+                              
+        
+    
+            
+    fil = open('levdist.csv')
+    l = fil.readlines()
+    l = l[1:]
+    
+    with open('cognates.csv', 'w') as cogs:
+        for line in l:
+            ls = line.strip('\n').split(',')
+            if float(ls[2]) >= 0.7:
+                if  ls[0] in dic and  ls[1] in dic[ls[0]]:
+                    cogs.write(ls[0] + ',' + ls[1] + ',' + ls[2]+ '\n')
+                    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
 if __name__ == "__main__":
-    file_shrinker()
+    cognates()
+    
