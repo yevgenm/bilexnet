@@ -101,7 +101,7 @@ def levdist():
     efil = open("/Users/amirardalankalantaridehgahi/Desktop/school/stevensonRA/clone/bilexnet/modEAT.net","r")
     eng = set()
     l = efil.readlines()[33:23252]
-    
+
     for line in l:
         line = line.split(" ",1)[-1]
         word = line.strip('\n')
@@ -109,8 +109,8 @@ def levdist():
         word = word.strip('\r')
         word = word.strip('"')
         eng.add(word)
-        
-        
+
+
     print("eng DONE!!!!!!!!!\n", len(eng))
     lev = []
     malemad = []

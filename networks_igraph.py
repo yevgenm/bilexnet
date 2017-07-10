@@ -106,7 +106,7 @@ class LexNet:
         visual_style["edge_width"] = [x * 50 for x in G_sub.es['weight']]
         visual_style["bbox"] = (1000, 1000)
         visual_style["margin"] = 20
-        plot(G_sub, w + "_" + name + ".svg", **visual_style)
+        plot(G_sub, "./plots/" + w + "_" + name + ".svg", **visual_style)
 
     def test_network(self, test_list, depth, direction, translation_dict=None, gold_full=None, verbose=True, log_file=None):
         # Tests the big network on a test list with words, using any language direction from Van Hell and De Groot (1998):
@@ -128,9 +128,11 @@ class LexNet:
         tvds = []
         rbds = []
         apks = []
+        apks_10 = []
         tvd = 0
         rbd = 0
         apk = 0
+        apk_10 = 0
         for w in test_list:
             gold_local = dict(gold[w])
             gold_clean = {k: v for k, v in gold_local.items() if gold_local[k] > 1}
@@ -155,10 +157,10 @@ class LexNet:
                 log_file.write("\tCUE: %s\n" % w)
                 if gold:
                     log_file.write("\t\tGOLD\n")
-                    for k, v in l_gold[:5]:
+                    for k, v in l_gold[:10]:
                         log_file.write("\t\t\t%s\t\t%.3f\n" % (k, v))
                 log_file.write("\t\tMAX DEPTH: %d\n" % depth)
-                for k, v in l_resp[:5]:
+                for k, v in l_resp[:10]:
                     log_file.write("\t\t\t%s\t\t%.3f\n" % (k, v))
                 log_file.flush()
             if gold:
@@ -167,26 +169,32 @@ class LexNet:
                     abs((d_gold.get(resp) or 0) - (dm_resp.get(resp) or 0)) for resp in set(d_gold) | set(dm_resp))
                 rbd_w = utils.get_rbd(k_gold, k_resp)
                 apk_w = 1 - metrics.apk(k_gold, k_resp, apk_k)
+                apk_w_10 = 1 - metrics.apk(k_gold, k_resp, 10)
                 tvd += tvd_w
                 rbd += rbd_w
                 apk += apk_w
+                apk_10 += apk_w_10
                 if log_file is not None:
                     log_file.write("\t\tTVD: %.3f\n" % tvd_w)
                     log_file.write("\t\tRBD: %.3f\n" % rbd_w)
-                    log_file.write("\t\tAPK: %.3f\n" % apk_w)
+                    log_file.write("\t\tAPK(k): %.3f\n" % apk_w)
+                    log_file.write("\t\tAPK(10): %.3f\n" % apk_w_10)
                 tvds.append(tvd_w)
                 rbds.append(rbd_w)
                 apks.append(apk_w)
+                apks_10.append(apk_w_10)
         if gold:
             tvd /= len(test_list)
             rbd /= len(test_list)
             apk /= len(test_list)
+            apk_10 /= len(test_list)
             if log_file is not None:
                 log_file.write("\tTotal variation distance: %.3f\n" % tvd)
                 log_file.write("\tRank-biased distance: %.3f\n" % rbd)
-                log_file.write("\tAverage precision (distance): %.3f\n" % apk)
+                log_file.write("\tAverage precision (distance, k): %.3f\n" % apk)
+                log_file.write("\tAverage precision (distance, 10): %.3f\n" % apk_10)
         if log_file is not None: log_file.flush()
-        return (tvds, rbds, apks)
+        return (tvds, rbds, apks, apks_10)
 
 
 class LexNetMo(LexNet):
@@ -227,12 +235,12 @@ class LexNetMo(LexNet):
 
 class LexNetBi(LexNet):
 
-    def __init__(self, fn_l1, fn_l2, l2_l1_dic, TE_assoc_ratio, orth_assoc_ratio, asymm_ratio,L2_links):
+    def __init__(self, fn_l1, fn_l2, l2_l1_dic, assoc_coeff, TE_coeff, orth_coeff, asymm_ratio):
         super().__init__()
         self.min_lev = parameters["orthographic threshold"]
-        self.G = self.construct_bilingual_graph(fn_l1, fn_l2, l2_l1_dic, TE_assoc_ratio, orth_assoc_ratio, asymm_ratio)
-        self.L2_links = L2_links
-    def get_assoc_edges(self, fn, lang):
+        self.G = self.construct_bilingual_graph(fn_l1, fn_l2, l2_l1_dic, assoc_coeff, TE_coeff, orth_coeff, asymm_ratio)
+
+    def get_assoc_edges(self, fn, lang, assoc_coeff):
         l = extras["language mapping"][lang]
         df = pandas.read_csv(fn, sep=";", na_values="", keep_default_na=False)
         edges = Counter()
@@ -243,46 +251,43 @@ class LexNetBi(LexNet):
         weighted_edges = [(e[0][0] + l, e[0][1] + l, e[1]) for e in edges.items() if e[0][1] not in
                              extras["noise list"] and e[1] > self.min_freq]
         vertices = [word + extras["language mapping"][lang] for word in
-                       set.union(set(df['cue']), set(df['asso1']), set(df['asso2']), set(df['asso3']))]
-        weighted_edges = utils.normalize_tuple_list(weighted_edges, 1)
+                    set.union(set(df['cue']), set(df['asso1']))]
+                       #set.union(set(df['cue']), set(df['asso1']), set(df['asso2']), set(df['asso3']))]
+        weighted_edges = utils.normalize_tuple_list(weighted_edges, assoc_coeff)
         return weighted_edges, vertices
 
-    def get_orth_edges(self, vertices_en, vertices_nl, orth_assoc_ratio):
+    def get_orth_edges(self, vertices_en, vertices_nl, orth_coeff):
         lev = utils.levLoader(self.min_lev)
         lev_edges_en_nl = {k: v for k, v in lev.items() if k[0] in vertices_en and k[1] in vertices_nl}
         lev_edges_nl_en = {(k[1], k[0]): v for k, v in lev_edges_en_nl.items()}
         lev_edges = copy.copy(lev_edges_en_nl)
         lev_edges.update(lev_edges_nl_en)
-        lev_edges = utils.normalize_tuple_dict(lev_edges, orth_assoc_ratio)
+        lev_edges = utils.normalize_tuple_dict(lev_edges, orth_coeff)
         return lev_edges
 
-    def get_TE_edges(self, vertices_en, vertices_nl, en_nl_dic, TE_assoc_ratio, asymm_ratio):
-        TE_all = {(k, v): TE_assoc_ratio for k, vs in en_nl_dic.items() for v in vs}
+    def get_TE_edges(self, vertices_en, vertices_nl, en_nl_dic, TE_coeff, asymm_ratio):
+        TE_all = {(k, v): TE_coeff for k, vs in en_nl_dic.items() for v in vs}
         TE_edges_en_nl = {k: v for k, v in TE_all.items() if k[0] in vertices_en and k[1] in vertices_nl}
-        TE_edges_en_nl = utils.normalize_tuple_dict(TE_edges_en_nl, TE_assoc_ratio * asymm_ratio)
+        TE_edges_en_nl = utils.normalize_tuple_dict(TE_edges_en_nl, TE_coeff * asymm_ratio)
         TE_edges_nl_en = {(k[1], k[0]): v for k, v in TE_edges_en_nl.items()}
-        TE_edges_nl_en = utils.normalize_tuple_dict(TE_edges_nl_en, TE_assoc_ratio)
+        TE_edges_nl_en = utils.normalize_tuple_dict(TE_edges_nl_en, TE_coeff)
         TE_edges = copy.copy(TE_edges_en_nl)
         TE_edges.update(TE_edges_nl_en)
         return TE_edges
 
-    def construct_bilingual_graph(self, fn_nl, fn_en, en_nl_dic, TE_assoc_ratio, orth_assoc_ratio, asymm_ratio):
+    def construct_bilingual_graph(self, fn_nl, fn_en, en_nl_dic, assoc_coeff, TE_coeff, orth_coeff, asymm_ratio):
         # Constructs a bilingual graph with various edges and pickles it. If a pickled file found, loads it instead.
-        fn = "./biling_graph/biling_pickled_TE_" + str(TE_assoc_ratio) + "_orth_" + str(
-            orth_assoc_ratio) + "_asymm_" + str(asymm_ratio)
+        fn = "./biling_graph/biling_pickled_assoc_"+str(assoc_coeff)+"_TE_" + str(TE_coeff) + "_orth_" + str(orth_coeff) + "_asymm_" + str(asymm_ratio)
         if os.path.isfile(fn):
             biling = read(fn, format="pickle")
         else:
 
-            edges_nl, vertices_nl = self.get_assoc_edges(fn_nl, "D")
+            edges_nl, vertices_nl = self.get_assoc_edges(fn_nl, "D", 1)
             # edges_en, vertices_en = self.get_assoc_edges(fn_en + "_plain", "E")
-            edges_en, vertices_en = self.get_assoc_edges(fn_en, "E")
+            edges_en, vertices_en = self.get_assoc_edges(fn_en, "E", assoc_coeff)
             
-            if self.L2_links == False:
-                edges_en = []
-            
-            orth_edges = self.get_orth_edges(vertices_en, vertices_nl, orth_assoc_ratio)
-            TE_edges = self.get_TE_edges(vertices_en, vertices_nl, en_nl_dic, TE_assoc_ratio, asymm_ratio)
+            orth_edges = self.get_orth_edges(vertices_en, vertices_nl, orth_coeff)
+            TE_edges = self.get_TE_edges(vertices_en, vertices_nl, en_nl_dic, TE_coeff, asymm_ratio)
             crossling_edges = [(k[0], k[1], v) for k, v in (Counter(TE_edges) + Counter(orth_edges)).items()]
 
             edges = []

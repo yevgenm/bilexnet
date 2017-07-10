@@ -11,13 +11,14 @@ def main():
     en_nl_dic = utils.read_dict("./dict/dictionary.csv")
     nl_en_dic = utils.invert_dict(en_nl_dic)
 
-    TE_assoc_ratio = 300
-    orth_assoc_ratio = 5
+    assoc_coeff = 0
+    TE_coeff = 1
+    orth_coeff = 0
     asymm_ratio = 1
 
     monoling = {"E": LexNetMo(fn=fn_en, language="en"),
                 "D": LexNetMo(fn=fn_nl, language="nl")}
-    biling = LexNetBi(fn_nl, fn_en, en_nl_dic, TE_assoc_ratio, orth_assoc_ratio, asymm_ratio)
+    biling = LexNetBi(fn_nl, fn_en, en_nl_dic, assoc_coeff, TE_coeff, orth_coeff, asymm_ratio)
 
     gold_dict = read_test_data()
 
@@ -33,7 +34,7 @@ def main():
 
         test_list = test_wordlist[cue_lang]
 
-        plot_list = ["slave:EN"]
+        plot_list = ["apple:EN"]
         for w in plot_list:
             monoling[target_lang].plot_subgraph(w, parameters["baseline depth"], "en")
             biling.plot_subgraph(w, parameters["model depth"], "biling")
