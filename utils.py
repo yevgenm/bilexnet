@@ -18,6 +18,8 @@ def read_dict(fn):
 
 def normalize_tuple_list(l, weight):
     # Given a list of tuples (word1, word2, weight), normalizes all weights, so that all edges outgoing from each word add up to the value of weight.
+    if weight == 0:
+        return []
     connections = {}
     for (w1, w2, c) in l:
         if w1 not in connections:
@@ -32,6 +34,8 @@ def normalize_tuple_list(l, weight):
 
 def normalize_tuple_dict(d, weight):
     # Given a dictionary {(word1, word2): weight}, normalizes all weights, so that all edges outgoing from each word add up to the value of weight.
+    if weight == 0:
+        return {}
     connections = {}
     for (w1, w2), c in d.items():
         if w1 not in connections:
@@ -43,6 +47,8 @@ def normalize_tuple_dict(d, weight):
 
 def normalize_dict(d, target=1.0):
     #Normalizes dictionary values to 1.
+    if target == 0:
+        return {}
     raw = sum(d.values())
     if raw == 0: return{}
     factor = target/raw

@@ -128,9 +128,11 @@ class LexNet:
         tvds = []
         rbds = []
         apks = []
+        apks_10 = []
         tvd = 0
         rbd = 0
         apk = 0
+        apk_10 = 0
         for w in test_list:
             gold_local = dict(gold[w])
             gold_clean = {k: v for k, v in gold_local.items() if gold_local[k] > 1}
@@ -167,26 +169,32 @@ class LexNet:
                     abs((d_gold.get(resp) or 0) - (dm_resp.get(resp) or 0)) for resp in set(d_gold) | set(dm_resp))
                 rbd_w = utils.get_rbd(k_gold, k_resp)
                 apk_w = 1 - metrics.apk(k_gold, k_resp, apk_k)
+                apk_w_10 = 1 - metrics.apk(k_gold, k_resp, 10)
                 tvd += tvd_w
                 rbd += rbd_w
                 apk += apk_w
+                apk_10 += apk_w_10
                 if log_file is not None:
                     log_file.write("\t\tTVD: %.3f\n" % tvd_w)
                     log_file.write("\t\tRBD: %.3f\n" % rbd_w)
-                    log_file.write("\t\tAPK: %.3f\n" % apk_w)
+                    log_file.write("\t\tAPK(k): %.3f\n" % apk_w)
+                    log_file.write("\t\tAPK(10): %.3f\n" % apk_w_10)
                 tvds.append(tvd_w)
                 rbds.append(rbd_w)
                 apks.append(apk_w)
+                apks_10.append(apk_w_10)
         if gold:
             tvd /= len(test_list)
             rbd /= len(test_list)
             apk /= len(test_list)
+            apk_10 /= len(test_list)
             if log_file is not None:
                 log_file.write("\tTotal variation distance: %.3f\n" % tvd)
                 log_file.write("\tRank-biased distance: %.3f\n" % rbd)
-                log_file.write("\tAverage precision (distance): %.3f\n" % apk)
+                log_file.write("\tAverage precision (distance, k): %.3f\n" % apk)
+                log_file.write("\tAverage precision (distance, 10): %.3f\n" % apk_10)
         if log_file is not None: log_file.flush()
-        return (tvds, rbds, apks)
+        return (tvds, rbds, apks, apks_10)
 
 
 class LexNetMo(LexNet):
@@ -243,7 +251,8 @@ class LexNetBi(LexNet):
         weighted_edges = [(e[0][0] + l, e[0][1] + l, e[1]) for e in edges.items() if e[0][1] not in
                              extras["noise list"] and e[1] > self.min_freq]
         vertices = [word + extras["language mapping"][lang] for word in
-                       set.union(set(df['cue']), set(df['asso1']), set(df['asso2']), set(df['asso3']))]
+                    set.union(set(df['cue']), set(df['asso1']))]
+                       #set.union(set(df['cue']), set(df['asso1']), set(df['asso2']), set(df['asso3']))]
         weighted_edges = utils.normalize_tuple_list(weighted_edges, assoc_coeff)
         return weighted_edges, vertices
 
@@ -268,7 +277,7 @@ class LexNetBi(LexNet):
 
     def construct_bilingual_graph(self, fn_nl, fn_en, en_nl_dic, assoc_coeff, TE_coeff, orth_coeff, asymm_ratio):
         # Constructs a bilingual graph with various edges and pickles it. If a pickled file found, loads it instead.
-        fn = "./biling_graph/biling_pickled_assoc"+str(assoc_coeff)+"_TE_" + str(TE_coeff) + "_orth_" + str(orth_coeff) + "_asymm_" + str(asymm_ratio)
+        fn = "./biling_graph/biling_pickled_assoc_"+str(assoc_coeff)+"_TE_" + str(TE_coeff) + "_orth_" + str(orth_coeff) + "_asymm_" + str(asymm_ratio)
         if os.path.isfile(fn):
             biling = read(fn, format="pickle")
         else:
