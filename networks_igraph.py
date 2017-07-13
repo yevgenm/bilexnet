@@ -257,7 +257,8 @@ class LexNetBi(LexNet):
         return weighted_edges, vertices
 
     def get_orth_edges(self, vertices_en, vertices_nl, orth_coeff):
-        lev = utils.levLoader(self.min_lev)
+        #lev = utils.levLoader(self.min_lev, "./levdist.csv")
+        lev = utils.levLoader(self.min_lev, "./cognates.csv")
         lev_edges_en_nl = {k: v for k, v in lev.items() if k[0] in vertices_en and k[1] in vertices_nl}
         lev_edges_nl_en = {(k[1], k[0]): v for k, v in lev_edges_en_nl.items()}
         lev_edges = copy.copy(lev_edges_en_nl)
