@@ -4,10 +4,11 @@ from parameters import *
 
 def test_model(args):
 
-    test_list, test_condition, fn_nl, fn_en, en_nl_dic, tvd_base, rbd_base, apk_base, apk_base_10, gold_dict, res_dir_cond, assoc_coeff, TE_coeff, orth_coeff, asymm_ratio = args
-    log_fn = res_dir_cond + "log_" + test_condition + "_assoc_" + str(assoc_coeff) + "_TE_" + str(TE_coeff) + "_orth_" + str(orth_coeff) + "_asymm_" + str(asymm_ratio)
+    test_list, test_condition, fn_nl, fn_en, en_nl_dic, tvd_base, rbd_base, apk_base, apk_base_10, gold_dict, res_dir_cond, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio = args
+    log_fn = res_dir_cond + "log_" + test_condition + "_L1_assoc_" + str(L1_assoc_coeff) + "_L2_assoc_" + str(
+        L2_assoc_coeff) + "_TE_" + str(TE_coeff) + "_orth_" + str(orth_coeff) + "_asymm_" + str(asymm_ratio)
     log_file = open(log_fn, "w")
-    biling = LexNetBi(fn_nl, fn_en, en_nl_dic, assoc_coeff, TE_coeff, orth_coeff, asymm_ratio)
+    biling = LexNetBi(fn_nl, fn_en, en_nl_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio)
 
     if test_condition == "ED":
         dict_for_filtering = en_nl_dic
@@ -16,7 +17,8 @@ def test_model(args):
     else:
         dict_for_filtering = None
 
-    log_file.write("NET:%s, DEPTH:%i, ASSOC: %i, TE:%i, ORTH:%i, ASYMM: %i\n" % ("bi", parameters["model depth"], assoc_coeff, TE_coeff, orth_coeff, asymm_ratio))
+    log_file.write("NET:%s, DEPTH:%i, L1 ASSOC: %i, L2 ASSOC: %i, TE:%i, ORTH:%i, ASYMM: %i\n" % ("bi", parameters[
+        "model depth"], L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio))
     tvd_m, rbd_m, apk_m, apk_m_10 = biling.test_network(test_list, parameters["model depth"], test_condition, translation_dict=dict_for_filtering, gold_full=gold_dict, verbose=True, log_file=log_file)
 
     log_file.write("TVD t-test: T=%.2f, p=%.3f\n" % (ttest_rel(tvd_base, tvd_m)[0], ttest_rel(tvd_base, tvd_m)[1]))
@@ -26,7 +28,7 @@ def test_model(args):
 
     log_file.close()
 
-    return(assoc_coeff, TE_coeff, orth_coeff, asymm_ratio, tvd_m, rbd_m, apk_m, apk_m_10)
+    return(L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio, tvd_m, rbd_m, apk_m, apk_m_10)
 
 
 def main():
@@ -52,7 +54,7 @@ def main():
     test_wordlist = {"E": utils.filter_test_list(monoling["E"].G, sorted(gold_dict['EE'].keys())),
                      "D": utils.filter_test_list(monoling["D"].G, sorted(gold_dict['DD'].keys()))}
 
-    test = ['DE', 'ED']
+    test = ['EE']
 
     for test_condition in test:
 
@@ -80,7 +82,7 @@ def main():
             tvd_base = rbd_base = apk_base = apk_base_10 = [0]*len(test_list)
 
         log_per_word = open(res_dir_cond + "log_per_word_"+test_condition+".tsv", 'w')
-        log_per_word.write("assoc\tTE\torth\tasymm\t")
+        log_per_word.write("L1_assoc\tL2_assoc\tTE\torth\tasymm\t")
         for w in test_list:
             log_per_word.write("%s (tvd)\t%s (rbd)\t%s (apk_k)\t%s (apk_10)\t" % (w, w, w, w))
 
@@ -89,13 +91,16 @@ def main():
 
         meta_args = [test_list, test_condition, fn_nl, fn_en, en_nl_dic, tvd_base, rbd_base, apk_base, apk_base_10, gold_dict, res_dir_cond]
 
-        par = [ [assoc_coeff, TE_coeff, orth_coeff, asymm_ratio]
-                for assoc_coeff in [0, 1, 2, 3, 5, 7, 10, 20, 50]
-                for TE_coeff in [1, 2, 3, 5, 7, 10]
-                for orth_coeff in [0, 1, 2, 3, 5, 7, 10]
-                for asymm_ratio in [1, 2, 3, 5, 7, 10]
-                if assoc_coeff==1 or not (assoc_coeff==TE_coeff and TE_coeff==orth_coeff)
-                #for (assoc_coeff, TE_coeff, orth_coeff, asymm_ratio) in zip([1,2,3,5,1,2,3,1,2,3,7,20],[1]*12,[0]*12,[1,1,1,1,2,2,2,3,3,3,1,1])
+        par = [ [L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio]
+                # for L1_assoc_coeff in [1, 2, 3, 5, 7, 10, 20]
+                # for L2_assoc_coeff in [0, 1, 2, 3, 5, 7, 10, 20]
+                # for TE_coeff in [1, 2, 3, 5, 7, 10]
+                # for orth_coeff in [0, 1, 2, 3, 5, 7, 10]
+                # for asymm_ratio in [1, 2, 3, 5, 7, 10]
+                # if L1_assoc_coeff==1 or not (L1_assoc_coeff==TE_coeff==L2_assoc_coeff==orth_coeff)
+                for (L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio) in [(2,2,1,1,2)]
+                # for (assoc_coeff, TE_coeff, orth_coeff, asymm_ratio) in
+                # zip([1,1,1,1,1,1,2,2,2,3,3,5,5,20],[1]*14,[0,1,2,3,0,1,0,1,2,0,2,0,1,0],[1,1,1,1,2,2,1,1,1,1,1,1,1,1])
               ]
 
 
@@ -105,8 +110,8 @@ def main():
         #    run_test(a)
 
         pool = Pool(workers)
-        for assoc_coeff, TE_coeff, orth_coeff, asymm_ratio, tvd_m, rbd_m, apk_m, apk_m_10 in pool.imap(test_model, args):
-            log_per_word.write("%d\t%d\t%d\t%d\t" % (assoc_coeff, TE_coeff, orth_coeff, asymm_ratio))
+        for L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio, tvd_m, rbd_m, apk_m, apk_m_10 in pool.imap(test_model, args):
+            log_per_word.write("%d\t%d\t%d\t%d\t%d\t" % (L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio))
             for idx in range(len(test_list)):
                 log_per_word.write("%.3f\t%.3f\t%.3f\t%.3f\t" % (tvd_m[idx] - tvd_base[idx], rbd_m[idx] - rbd_base[idx], apk_m[idx] - apk_base[idx], apk_m_10[idx] - apk_base_10[idx]))
             log_per_word.write("\n")
