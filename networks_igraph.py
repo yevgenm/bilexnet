@@ -10,7 +10,6 @@ import utils
 from pajek_converter import convert_pajek
 import pandas
 from parameters import extras, parameters
-import pickle
 import random
 from scipy.stats import ttest_rel
 from test_data_reader import read_test_data
@@ -82,8 +81,7 @@ class LexNet:
                             if (vertex, resp) not in edges:
                                 edges[(vertex, resp)] = 0
                             edges[(vertex, resp)] += wei
-                responses_current_level = dict(
-                    sum((Counter(x) for x in [responses_current_level, responses_single_word]), Counter()))
+                responses_current_level = dict(sum((Counter(x) for x in [responses_current_level, responses_single_word]), Counter()))
             if not responses_current_level:
                 return ({}, vertices, edges)
             else:
@@ -205,8 +203,8 @@ class LexNetMo(LexNet):
         self.lang = language
 
     def create_monolingual_graph(self, fn, language):
-        if os.path.isfile(fn + "_pickled"):
-            G = read(fn + "_pickled", format="pickle")
+        if os.path.isfile(fn + "_dump"):
+            G = read(fn + "_dump", format="pickle")
         else:
             if language == "nl":
                 G = self.construct_graph(fn, "NL")
@@ -215,8 +213,8 @@ class LexNetMo(LexNet):
                 #     convert_pajek(fn)
                 # G = self.construct_graph(fn + "_plain", "EN")
                 G = self.construct_graph(fn, "EN")
-            G.write_pickle(fn + "_pickled")
-        return(G)
+            G.write_pickle(fn + "_dump")
+        return G
 
     def construct_graph(self, fn, lang):
         # Constructs the big monolingual graph from CSV.
@@ -235,10 +233,10 @@ class LexNetMo(LexNet):
 
 class LexNetBi(LexNet):
 
-    def __init__(self, fn_l1, fn_l2, l2_l1_dic, assoc_coeff, TE_coeff, orth_coeff, asymm_ratio):
+    def __init__(self, fn_l1, fn_l2, l2_l1_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio):
         super().__init__()
         self.min_lev = parameters["orthographic threshold"]
-        self.G = self.construct_bilingual_graph(fn_l1, fn_l2, l2_l1_dic, assoc_coeff, TE_coeff, orth_coeff, asymm_ratio)
+        self.G = self.construct_bilingual_graph(fn_l1, fn_l2, l2_l1_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio)
 
     def get_assoc_edges(self, fn, lang, assoc_coeff):
         l = extras["language mapping"][lang]
@@ -267,25 +265,29 @@ class LexNetBi(LexNet):
         return lev_edges
 
     def get_TE_edges(self, vertices_en, vertices_nl, en_nl_dic, TE_coeff, asymm_ratio):
-        TE_all = {(k, v): TE_coeff for k, vs in en_nl_dic.items() for v in vs}
-        TE_edges_en_nl = {k: v for k, v in TE_all.items() if k[0] in vertices_en and k[1] in vertices_nl}
+        freqs_nl = utils.read_frequencies("./frequencies/SUBTLEX-NL.txt", ":NL")
+        freqs_en = utils.read_frequencies("./frequencies/en_google_ngrams", ":EN")
+        TE_all = [(en,nl) for en, nls in en_nl_dic.items() for nl in nls]
+        TE_edges_en_nl = {tpl: (freqs_nl.get(tpl[1]) or 1) for tpl in TE_all if tpl[0] in vertices_en and tpl[1] in vertices_nl}
+        # TE_edges_en_nl = {tpl: 1 for tpl in TE_all if tpl[0] in vertices_en and tpl[1] in vertices_nl}
         TE_edges_en_nl = utils.normalize_tuple_dict(TE_edges_en_nl, TE_coeff * asymm_ratio)
-        TE_edges_nl_en = {(k[1], k[0]): v for k, v in TE_edges_en_nl.items()}
+        # TE_edges_nl_en = {(k[1], k[0]): 1 for k in TE_edges_en_nl.keys()}
+        TE_edges_nl_en = {(tpl[1], tpl[0]): (freqs_en.get(tpl[0]) or 1) for tpl in TE_edges_en_nl.keys()}
         TE_edges_nl_en = utils.normalize_tuple_dict(TE_edges_nl_en, TE_coeff)
         TE_edges = copy.copy(TE_edges_en_nl)
         TE_edges.update(TE_edges_nl_en)
         return TE_edges
 
-    def construct_bilingual_graph(self, fn_nl, fn_en, en_nl_dic, assoc_coeff, TE_coeff, orth_coeff, asymm_ratio):
+    def construct_bilingual_graph(self, fn_nl, fn_en, en_nl_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio):
         # Constructs a bilingual graph with various edges and pickles it. If a pickled file found, loads it instead.
-        fn = "./biling_graph/biling_pickled_assoc_"+str(assoc_coeff)+"_TE_" + str(TE_coeff) + "_orth_" + str(orth_coeff) + "_asymm_" + str(asymm_ratio)
+        fn = "./biling_graph/biling_dump_L1_assoc_" + str(L1_assoc_coeff) + "_L2_assoc_" + str(L2_assoc_coeff) + "_TE_" + str(TE_coeff) + "_orth_" + str(orth_coeff) + "_asymm_" + str(asymm_ratio)
         if os.path.isfile(fn):
             biling = read(fn, format="pickle")
         else:
 
-            edges_nl, vertices_nl = self.get_assoc_edges(fn_nl, "D", 1)
+            edges_nl, vertices_nl = self.get_assoc_edges(fn_nl, "D", L1_assoc_coeff)
             # edges_en, vertices_en = self.get_assoc_edges(fn_en + "_plain", "E")
-            edges_en, vertices_en = self.get_assoc_edges(fn_en, "E", assoc_coeff)
+            edges_en, vertices_en = self.get_assoc_edges(fn_en, "E", L2_assoc_coeff)
             
             orth_edges = self.get_orth_edges(vertices_en, vertices_nl, orth_coeff)
             TE_edges = self.get_TE_edges(vertices_en, vertices_nl, en_nl_dic, TE_coeff, asymm_ratio)
