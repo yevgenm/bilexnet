@@ -13,7 +13,7 @@ from parameters import extras, parameters
 import random
 from scipy.stats import ttest_rel
 from test_data_reader import read_test_data
-
+from numpy.random import choice
 
 class LexNet:
 
@@ -57,6 +57,43 @@ class LexNet:
                 responses_next_level = self.spread_activation(responses_current_level, depth - 1)
             final_vertices = dict(sum((Counter(x) for x in [responses_current_level, responses_next_level]), Counter()))
             return (final_vertices)
+
+
+    def random_walk(self, responses, depth):
+        if depth == 0:
+            return (responses)
+        else:
+            
+            new = dict()
+            cue = responses.keys()[0]
+            for e in self.G.incident(cue): 
+                new[self.G.vs[self.G.es[e].tuple[1]]['name']] = self.G.es[e]["weight"]
+            draw = choice(new.keys(), 1, new.values())
+            
+            return( random_walk( {draw: 1.0} , depth-1 ) )
+
+
+
+    def multiple_walks(self,responses,depth=3,iter_num=100):
+        return_stuff = {}
+        
+        for num in range(iter_num):
+            draw = random_walk(responses, depth).keys()
+            
+            if draw in return_stuff:
+                return_stuff[draw] = return_stuff[draw] + 1
+                
+            else:
+                return_stuff[draw] = 1
+                
+        return return_stuff
+        
+        
+        
+        
+        
+        
+        
 
     def plot_activation(self, responses, vertices, edges, depth):
         # An auxiliary function that spreads activation for plotting a subgraph.
