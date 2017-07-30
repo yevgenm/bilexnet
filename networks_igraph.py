@@ -58,42 +58,29 @@ class LexNet:
             final_vertices = dict(sum((Counter(x) for x in [responses_current_level, responses_next_level]), Counter()))
             return (final_vertices)
 
-
     def random_walk(self, responses, depth):
         if depth == 0:
             return (responses)
         else:
-            
             new = dict()
-            cue = responses.keys()[0]
+            cue = list(responses.keys())[0]
             for e in self.G.incident(cue): 
                 new[self.G.vs[self.G.es[e].tuple[1]]['name']] = self.G.es[e]["weight"]
-            draw = choice(new.keys(), 1, new.values())
-            
-            return( random_walk( {draw: 1.0} , depth-1 ) )
+            if not new:
+                return {cue:1.0}
+            draw = choice(list(new.keys()), 1, replace=False, p=list(new.values()))[0]
+            return self.random_walk( {draw: 1.0} , depth-1 ) 
 
-
-
-    def multiple_walks(self,responses,depth=3,iter_num=100):
+    def multiple_walks(self, responses, depth, iter_num=1000):
         return_stuff = {}
-        
         for num in range(iter_num):
-            draw = random_walk(responses, depth).keys()
-            
+            draw = list(self.random_walk(responses, depth))[0]
             if draw in return_stuff:
                 return_stuff[draw] = return_stuff[draw] + 1
-                
             else:
                 return_stuff[draw] = 1
-                
+        return_stuff = {k:v for k,v in return_stuff.items() if v > 1}
         return return_stuff
-        
-        
-        
-        
-        
-        
-        
 
     def plot_activation(self, responses, vertices, edges, depth):
         # An auxiliary function that spreads activation for plotting a subgraph.
@@ -133,7 +120,7 @@ class LexNet:
         #G_sub.add_vertices(w)
         #G_sub.vs["name"] = [w]
         responses, vertices, edges = self.plot_activation(starting_vertex, [w], {}, depth)
-        edges_filtered = [(k[0],k[1],v) for k,v in edges.items() if v > 0.005]
+        edges_filtered = [(k[0],k[1],v) for k,v in edges.items() if v > 0.001]
         G_sub = Graph.TupleList(edges=edges_filtered, edge_attrs="weight", directed=True)
         visual_style = {}
         visual_style["vertex_size"] = 10
@@ -176,6 +163,7 @@ class LexNet:
             k_gold = [pair[0] for pair in l_gold]
             starting_vertex = {w: 1.0}
             responses = self.spread_activation(starting_vertex, depth)
+            #responses = self.multiple_walks(starting_vertex, depth)
             if w in responses:
                 del responses[w]
             if stimulus_lang != response_lang:
@@ -241,7 +229,8 @@ class LexNetMo(LexNet):
 
     def create_monolingual_graph(self, fn, language):
         if os.path.isfile(fn + "_dump"):
-            G = read(fn + "_dump", format="pickle")
+            #G = read(fn + "_dump", format="pickle")
+            G = read(fn + "_dump", format="ncol")
         else:
             if language == "nl":
                 G = self.construct_graph(fn, "NL")
@@ -250,12 +239,14 @@ class LexNetMo(LexNet):
                 #     convert_pajek(fn)
                 # G = self.construct_graph(fn + "_plain", "EN")
                 G = self.construct_graph(fn, "EN")
-            G.write_pickle(fn + "_dump")
+            #G.write_pickle(fn + "_dump")
+            G.write_ncol(fn + "_dump", names="name")
         return G
 
     def construct_graph(self, fn, lang):
         # Constructs the big monolingual graph from CSV.
         df = pandas.read_csv(fn, sep=";", na_values="", keep_default_na=False)
+        df = df[(~df['cue'].str.contains(' ')) & (~df['asso1'].str.contains(' '))]
         edges = Counter()
         # for i in range(1, 4):
         # First response only:
@@ -270,14 +261,18 @@ class LexNetMo(LexNet):
 
 class LexNetBi(LexNet):
 
-    def __init__(self, fn_l1, fn_l2, l2_l1_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio):
+    def __init__(self, fn_l1, fn_l2, l2_l1_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio, mode):
         super().__init__()
-        self.min_lev = parameters["orthographic threshold"]
-        self.G = self.construct_bilingual_graph(fn_l1, fn_l2, l2_l1_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio)
+        self.orth_threshold = parameters["orthographic threshold"]
+        self.cogn_threshold = parameters["cognate threshold"]
+        self.use_freq = parameters["use frequencies"]
+        self.orth_edge_type = parameters["orth edge type"]
+        self.G = self.construct_bilingual_graph(fn_l1, fn_l2, l2_l1_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio, mode)
 
     def get_assoc_edges(self, fn, lang, assoc_coeff):
         l = extras["language mapping"][lang]
         df = pandas.read_csv(fn, sep=";", na_values="", keep_default_na=False)
+        df = df[(~df['cue'].str.contains(' ')) & (~df['asso1'].str.contains(' '))]
         edges = Counter()
         # for i in range(1, 4):
         # First response only:
@@ -291,42 +286,51 @@ class LexNetBi(LexNet):
         weighted_edges = utils.normalize_tuple_list(weighted_edges, assoc_coeff)
         return weighted_edges, vertices
 
-    def get_orth_edges(self, vertices_en, vertices_nl, orth_coeff):
-        #lev = utils.levLoader(self.min_lev, "./levdist.csv")
-        lev = utils.levLoader(self.min_lev, "./cognates.csv")
+    def get_orth_edges(self, vertices_en, vertices_nl, orth_coeff, mode, asymm_ratio):
+        if mode == "orth":
+            lev = utils.levLoader(self.orth_threshold, "./levdist.csv")
+        elif mode == "cogn":
+            lev = utils.levLoader(self.cogn_threshold, "./cognates.csv")
+        else:
+            sys.exit("MODE variable unknown. Unclear how to set orthographic links.")
         lev_edges_en_nl = {k: v for k, v in lev.items() if k[0] in vertices_en and k[1] in vertices_nl}
         lev_edges_nl_en = {(k[1], k[0]): v for k, v in lev_edges_en_nl.items()}
+        lev_edges_en_nl = utils.normalize_tuple_dict(lev_edges_en_nl, orth_coeff * asymm_ratio)
+        lev_edges_nl_en = utils.normalize_tuple_dict(lev_edges_nl_en, orth_coeff)
         lev_edges = copy.copy(lev_edges_en_nl)
         lev_edges.update(lev_edges_nl_en)
-        lev_edges = utils.normalize_tuple_dict(lev_edges, orth_coeff)
+
         return lev_edges
 
     def get_TE_edges(self, vertices_en, vertices_nl, en_nl_dic, TE_coeff, asymm_ratio):
-        freqs_nl = utils.read_frequencies("./frequencies/SUBTLEX-NL.txt", ":NL")
-        freqs_en = utils.read_frequencies("./frequencies/en_google_ngrams", ":EN")
         TE_all = [(en,nl) for en, nls in en_nl_dic.items() for nl in nls]
-        TE_edges_en_nl = {tpl: (freqs_nl.get(tpl[1]) or 1) for tpl in TE_all if tpl[0] in vertices_en and tpl[1] in vertices_nl}
-        # TE_edges_en_nl = {tpl: 1 for tpl in TE_all if tpl[0] in vertices_en and tpl[1] in vertices_nl}
+        if self.use_freq:
+            freqs_nl = utils.read_frequencies("./frequencies/SUBTLEX-NL.txt", ":NL")
+            freqs_en = utils.read_frequencies("./frequencies/en_google_ngrams", ":EN")
+            TE_edges_en_nl = {tpl: (freqs_nl.get(tpl[1]) or 1) for tpl in TE_all if tpl[0] in vertices_en and tpl[1] in vertices_nl}
+            TE_edges_nl_en = {(tpl[1], tpl[0]): (freqs_en.get(tpl[0]) or 1) for tpl in TE_edges_en_nl.keys()}
+        else:
+            TE_edges_en_nl = {tpl: 1 for tpl in TE_all if tpl[0] in vertices_en and tpl[1] in vertices_nl}
+            TE_edges_nl_en = {(tpl[1], tpl[0]): 1 for tpl in TE_edges_en_nl.keys()}
         TE_edges_en_nl = utils.normalize_tuple_dict(TE_edges_en_nl, TE_coeff * asymm_ratio)
-        # TE_edges_nl_en = {(k[1], k[0]): 1 for k in TE_edges_en_nl.keys()}
-        TE_edges_nl_en = {(tpl[1], tpl[0]): (freqs_en.get(tpl[0]) or 1) for tpl in TE_edges_en_nl.keys()}
         TE_edges_nl_en = utils.normalize_tuple_dict(TE_edges_nl_en, TE_coeff)
         TE_edges = copy.copy(TE_edges_en_nl)
         TE_edges.update(TE_edges_nl_en)
         return TE_edges
 
-    def construct_bilingual_graph(self, fn_nl, fn_en, en_nl_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio):
+    def construct_bilingual_graph(self, fn_nl, fn_en, en_nl_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio, mode):
         # Constructs a bilingual graph with various edges and pickles it. If a pickled file found, loads it instead.
-        fn = "./biling_graph/biling_dump_L1_assoc_" + str(L1_assoc_coeff) + "_L2_assoc_" + str(L2_assoc_coeff) + "_TE_" + str(TE_coeff) + "_orth_" + str(orth_coeff) + "_asymm_" + str(asymm_ratio)
+        fn = "./biling_graph/orth_"+str(self.orth_edge_type)+"_freq_"+str(self.use_freq)+"/biling_dump_L1_assoc_" + str(L1_assoc_coeff) + "_L2_assoc_" + str(L2_assoc_coeff) + "_TE_" + str(TE_coeff) + "_orth_" + str(orth_coeff) + "_asymm_" + str(asymm_ratio)
         if os.path.isfile(fn):
-            biling = read(fn, format="pickle")
+            #biling = read(fn, format="pickle")
+            biling = read(fn, format="ncol")
         else:
 
             edges_nl, vertices_nl = self.get_assoc_edges(fn_nl, "D", L1_assoc_coeff)
             # edges_en, vertices_en = self.get_assoc_edges(fn_en + "_plain", "E")
             edges_en, vertices_en = self.get_assoc_edges(fn_en, "E", L2_assoc_coeff)
             
-            orth_edges = self.get_orth_edges(vertices_en, vertices_nl, orth_coeff)
+            orth_edges = self.get_orth_edges(vertices_en, vertices_nl, orth_coeff, mode, asymm_ratio)
             TE_edges = self.get_TE_edges(vertices_en, vertices_nl, en_nl_dic, TE_coeff, asymm_ratio)
             crossling_edges = [(k[0], k[1], v) for k, v in (Counter(TE_edges) + Counter(orth_edges)).items()]
 
@@ -337,5 +341,6 @@ class LexNetBi(LexNet):
             edges = utils.normalize_tuple_list(edges, 1)
 
             biling = Graph.TupleList(edges=edges, edge_attrs="weight", directed=True)
-            biling.write_pickle(fn)
+            #biling.write_pickle(fn)
+            biling.write_ncol(fn, names="name")
         return (biling)
