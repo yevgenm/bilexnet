@@ -7,6 +7,22 @@ import numpy as np
 import ml_metrics as metrics
 import pandas
 import pickle
+from scipy.stats import wilcoxon
+
+n_abs_ncog = ["duty","opportunity","favour","attempt","advantage","ease","revenge","truth","conscience","cause","memory","demand","care","faith","property"]
+n_abs_cog = ["insight","shame","plan","motive","quality","hell","block","method","chance","principle","information","metal","circle","panic","figure"]
+n_con_ncog = ["shop","mirror","gun","potato","knife","bottle","skirt","flower","tree","hospital","trousers","farm","bird","bike","jail"]
+n_con_cog = ["shoulder","season","finger","captain","daughter","pepper","slave","apple","snow","winter","coffee","rose","police","train","doctor"]
+v_abs_ncog = ["refuse","admit","disturb","succeed","guess","promise","understand"]
+v_abs_cog = ["forget","bend","dare","arrest","hate","hope","spread","irritate"]
+v_con_ncog = ["tremble","move","baptize","throw","calculate","marry","cry","paint"]
+v_con_cog = ["sneeze","climb","frown","swim","listen","steal","sing"]
+nouns = n_abs_ncog + n_abs_cog + n_con_ncog + n_con_cog
+verbs = v_abs_ncog + v_abs_cog + v_con_ncog + v_con_cog
+abst = n_abs_ncog + n_abs_cog + v_abs_ncog + v_abs_cog
+con = n_con_ncog + n_con_cog + v_con_ncog + v_con_cog
+ncog = n_abs_ncog + n_con_ncog + v_abs_ncog + v_con_ncog
+cog = n_abs_cog + n_con_cog + v_abs_cog + v_con_cog
 
 np.random.seed(12345678)
 threshold_frequency = 0
@@ -72,26 +88,28 @@ def read_test_file(fn):
                 resp_dict[cue_lang][target_lang].extend(target_responses)
     return(resp_dict)
 
-def read_test_data():
+def read_test_data(condition):
     # Reads test data of Van Hell & De Groot (1998). CSV format needed.
 
-    # DD_DE_DD_test_dict = read_test_file("./vanhell/DD1-DE2-DD3.csv")
-    # DE_DD_test_dict = read_test_file("./vanhell/DE1-DD2.csv")
-    #
-    # DD_test_lists = [DD_DE_DD_test_dict['D0']['D0'],
-    #                  DD_DE_DD_test_dict['D2']['D2'],
-    #                  DE_DD_test_dict['D1']['D1']]
+    if condition[1] == "D":
+        DD_DE_DD_test_dict = read_test_file("./vanhell/DD1-DE2-DD3.csv")
+        DE_DD_test_dict = read_test_file("./vanhell/DE1-DD2.csv")
 
-    DD_DE_DD_test_dict = read_test_file("./vanhell/EE1-ED2-EE3.csv")
-    DE_DD_test_dict = read_test_file("./vanhell/ED1-EE2.csv")
+        test_lists = [DD_DE_DD_test_dict['D0']['D0'],
+                          DD_DE_DD_test_dict['D2']['D2'],
+                          DE_DD_test_dict['D1']['D1']]
 
-    DD_test_lists = [DD_DE_DD_test_dict['E0']['E0'],
-                     DD_DE_DD_test_dict['E2']['E2'],
-                     DE_DD_test_dict['E1']['E1']]
+    elif condition[1] == "E":
+        EE_ED_EE_test_dict = read_test_file("./vanhell/EE1-ED2-EE3.csv")
+        ED_EE_test_dict = read_test_file("./vanhell/ED1-EE2.csv")
+
+        test_lists = [EE_ED_EE_test_dict['E0']['E0'],
+                      EE_ED_EE_test_dict['E2']['E2'],
+                      ED_EE_test_dict['E1']['E1']]
 
     gold_dict = {}
-    for session in range(len(DD_test_lists)):
-        for k,v in Counter(DD_test_lists[session]).items():
+    for session in range(len(test_lists)):
+        for k,v in Counter(test_lists[session]).items():
             if session not in gold_dict:
                 gold_dict[session] = {}
             if k[0] not in gold_dict[session]:
@@ -108,6 +126,7 @@ def get_diff(d1, d2, test_words):
     tvds = []
     rbds = []
     apks = []
+    apks10 = []
     for w in sorted(test_words):
         k = min(len(d1[w]), len(d2[w]))
         dw1 = sorted(d1[w].items(), key=lambda x: (-x[1], x[0]))
@@ -119,10 +138,12 @@ def get_diff(d1, d2, test_words):
         tvd = 0.5 * sum(abs((dw1.get(resp) or 0) - (dw2.get(resp) or 0)) for resp in set(dw1) | set(dw2))
         rbd = get_rbd(lw1, lw2)
         apk = 1-metrics.apk(lw1, lw2, k)
+        apk10 = 1 - metrics.apk(lw1, lw2, 10)
         tvds.append((w, tvd))
         rbds.append((w, rbd))
         apks.append((w, apk))
-    return tvds, rbds, apks
+        apks10.append((w, apk10))
+    return tvds, rbds, apks, apks10
 
 def read_aggregated_test_file(fn):
     # An auxiliary function that reads a single test file.
@@ -203,42 +224,61 @@ def read_aggregated_test_data():
 
     return(gold_dict)
 
+def print_results(tvds, rbds, apks, apks10, tvds2, rbds2, apks2, apks102):
+    print("TVD MEANS: in-group: %.3f, out-group, %.3f" % (np.median([i[1] for i in tvds]), np.median([i[1] for i in tvds2])))
+    #print(ttest_rel([i[1] for i in tvds], [j[1] for j in tvds2]))
+    print(wilcoxon([i[1] for i in tvds], [j[1] for j in tvds2]))
+    print("RBD MEANS: in-group: %.3f, out-group, %.3f" % (np.median([i[1] for i in rbds]), np.median([i[1] for i in rbds2])))
+    #print(ttest_rel([i[1] for i in rbds], [j[1] for j in rbds2]))
+    print(wilcoxon([i[1] for i in rbds], [j[1] for j in rbds2]))
+    print("APK MEANS: in-group: %.3f, out-group, %.3f" % (np.median([i[1] for i in apks]), np.median([i[1] for i in apks2])))
+    #print(ttest_rel([i[1] for i in apks], [j[1] for j in apks2]))
+    print(wilcoxon([i[1] for i in apks], [j[1] for j in apks2]))
+    print("APK (10) MEANS: in-group: %.3f, out-group, %.3f" % (np.median([i[1] for i in apks10]), np.median([i[1] for i in apks102])))
+    #print(ttest_rel([i[1] for i in apks10], [j[1] for j in apks102]))
+    print(wilcoxon([i[1] for i in apks10], [j[1] for j in apks102]))
 
 if __name__ == "__main__":
 
-    test_data_session = read_test_data()
-    #tvds2, rbds2, apks2 = get_diff(DD[2], DD[1], test_words)
+    test_data_session = read_test_data('DD')
 
-    #print(ttest_rel([i[1] for i in tvds], [j[1] for j in tvds2]))
-    #print(ttest_rel([i[1] for i in rbds], [j[1] for j in rbds2]))
-    #print(ttest_rel([i[1] for i in apks], [j[1] for j in apks2]))
+    test_data_aggregated = read_aggregated_test_data()['DD']
+    norm_data_sf = read_norm_data("./SF_norms/sothflorida_complete.csv")
+    norm_data_dutch = read_norm_data("./Dutch/shrunkdutch2.csv")
+    #norm_data_eat = read_norm_data("./EAT/shrunkEAT.net_plain")
 
-    test_data_aggregated = read_aggregated_test_data()['EE']
-    #norm_data = read_norm_data("./Dutch/shrunkdutch2.csv")
-    norm_data_eat = read_norm_data("./EAT/shrunkEAT.net_plain")
+    # n = 30
+    # greater_diff = {test_words[i]:(tvds2[i][1]-tvds[i][1]) for i in range(len(test_words)) if tvds2[i][1] > tvds[i][1]}
+    # smaller_diff = {test_words[i]:(tvds2[i][1]-tvds[i][1]) for i in range(len(test_words)) if tvds2[i][1] <= tvds[i][1]}
+    # print([k for k in sorted(greater_diff, key=greater_diff.get, reverse=True)][:n])
+    # print([k for k in sorted(smaller_diff, key=smaller_diff.get)][:n])
+    #
+    # greater_diff = {test_words[i]:(rbds2[i][1]-rbds[i][1]) for i in range(len(test_words)) if rbds2[i][1] > rbds[i][1]}
+    # smaller_diff = {test_words[i]:(rbds2[i][1]-rbds[i][1]) for i in range(len(test_words)) if rbds2[i][1] <= rbds[i][1]}
+    # print([k for k in sorted(greater_diff, key=greater_diff.get, reverse=True)][:n])
+    # print([k for k in sorted(smaller_diff, key=smaller_diff.get)][:n])
+    #
+    # greater_diff = {test_words[i]:(apks2[i][1]-apks[i][1]) for i in range(len(test_words)) if apks2[i][1] > apks[i][1]}
+    # smaller_diff = {test_words[i]:(apks2[i][1]-apks[i][1]) for i in range(len(test_words)) if apks2[i][1] <= apks[i][1]}
+    # print([k for k in sorted(greater_diff, key=greater_diff.get, reverse=True)][:n])
+    # print([k for k in sorted(smaller_diff, key=smaller_diff.get)][:n])
+    #
+    # greater_diff = {test_words[i]:(apks102[i][1]-apks10[i][1]) for i in range(len(test_words)) if apks102[i][1] > apks[i][1]}
+    # smaller_diff = {test_words[i]:(apks102[i][1]-apks10[i][1]) for i in range(len(test_words)) if apks102[i][1] <= apks[i][1]}
+    # print([k for k in sorted(greater_diff, key=greater_diff.get, reverse=True)][:n])
+    # print([k for k in sorted(smaller_diff, key=smaller_diff.get)][:n])
 
-    with open("southflor.pickle",'rb') as fn:
-        norm_data_sf = pickle.load(fn, encoding="latin1")
-
-    test_words = set(test_data_session[0].keys()).intersection(set(norm_data_sf.keys()))
-    tvds, rbds, apks = get_diff(test_data_session[0], test_data_session[1], test_words)
-
-    test_words = set(test_data_aggregated.keys()).intersection(set(norm_data_eat.keys())).intersection(set(norm_data_sf.keys()))
-    tvds, rbds, apks = get_diff(test_data_aggregated, norm_data_sf, test_words)
-    tvds2, rbds2, apks2 = get_diff(test_data_aggregated, norm_data_eat, test_words)
-
-    print("TVD MEANS: in-group: %.3f, out-group, %.3f" % (np.mean([i[1] for i in tvds]), np.mean([i[1] for i in tvds2])))
-    print(ttest_rel([i[1] for i in tvds], [j[1] for j in tvds2]))
-    print("RBD MEANS: in-group: %.3f, out-group, %.3f" % (np.mean([i[1] for i in rbds]), np.mean([i[1] for i in rbds2])))
-    print(ttest_rel([i[1] for i in rbds], [j[1] for j in rbds2]))
-    print("APK MEANS: in-group: %.3f, out-group, %.3f" % (np.mean([i[1] for i in apks]), np.mean([i[1] for i in apks2])))
-    print(ttest_rel([i[1] for i in apks], [j[1] for j in apks2]))
 
     # print(sorted([(tvds[idx][0], tvds2[idx][1] - tvds[idx][1]) for idx in range(len(tvds))], key=lambda x: -x[1])[:10])
     # print(sorted([(rbds[idx][0], rbds2[idx][1] - rbds[idx][1]) for idx in range(len(rbds))], key=lambda x: -x[1])[:10])
     # print(sorted([(apks[idx][0], apks2[idx][1] - apks[idx][1]) for idx in range(len(apks))], key=lambda x: -x[1])[:10])
 
-    # test_words = test_data_session[2].keys()
+    print("P1/1 & P1/2 vs. P1/1 & P2")
+    test_words = sorted(list(set(test_data_session[2].keys()).intersection(set(test_data_session[0].keys()))))
+    print(len(test_words), test_words)
+    tvds, rbds, apks, apks10 = get_diff(test_data_session[0], test_data_session[1], test_words)
+    tvds2, rbds2, apks2, apks102 = get_diff(test_data_session[0], test_data_session[2], test_words)
+    print_results(tvds, rbds, apks, apks10, tvds2, rbds2, apks2, apks102)
     # tvds, rbds, apks = get_diff(test_data_session[0], test_data_session[1], test_words)
     # tvds2, rbds2, apks2 = get_diff(test_data_session[0], test_data_session[2], test_words)
     # print("TVD MEANS: in-group: %.3f, out-group, %.3f" % (np.mean([i[1] for i in tvds]), np.mean([i[1] for i in tvds2])))
@@ -247,3 +287,20 @@ if __name__ == "__main__":
     # print(ttest_rel([i[1] for i in rbds], [j[1] for j in rbds2]))
     # print("APK MEANS: in-group: %.3f, out-group, %.3f" % (np.mean([i[1] for i in apks]), np.mean([i[1] for i in apks2])))
     # print(ttest_rel([i[1] for i in apks], [j[1] for j in apks2]))
+
+    print("P1/1 & P2 vs. P1/1+2 & M(Dutch)")
+    test_words = sorted(list(set(test_data_session[2].keys()).intersection(set(norm_data_dutch.keys()))))
+    print(len(test_words), test_words)
+    # if "trousers" in test_words: test_words.remove("trousers")
+    tvds, rbds, apks, apks10 = get_diff(test_data_session[0], test_data_session[2], test_words)
+    tvds2, rbds2, apks2, apks102 = get_diff(test_data_aggregated, norm_data_dutch, test_words)
+    print_results(tvds, rbds, apks, apks10, tvds2, rbds2, apks2, apks102)
+
+    print("P1/1 & P2 vs. P1/1+2 & M(English)")
+    test_words = sorted(list(set(test_data_session[2].keys()).intersection(set(norm_data_sf.keys()))))
+    print(len(test_words), test_words)
+    # if "trousers" in test_words: test_words.remove("trousers")
+    tvds, rbds, apks, apks10 = get_diff(test_data_session[0], test_data_session[2], test_words)
+    tvds2, rbds2, apks2, apks102 = get_diff(test_data_aggregated, norm_data_sf, test_words)
+    print_results(tvds, rbds, apks, apks10, tvds2, rbds2, apks2, apks102)
+

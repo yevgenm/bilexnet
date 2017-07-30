@@ -3,6 +3,20 @@
 import numpy as np
 import csv
 
+def read_frequencies(fn, lang):
+    # Reads the file with Dutch word frequencies.
+    freq_dict = {}
+    with open(fn) as f:
+        reader = csv.reader(f, skipinitialspace=True, quotechar=None, delimiter="\t")
+        next(reader)
+        for row in reader:
+            word = row[0].lower()+lang
+            freq = int(row[1])
+            if word not in freq_dict: freq_dict[word] = freq
+            freq_dict[word] += freq
+    return freq_dict
+
+
 def read_dict(fn):
     # Reads an English-Dutch dictionary from CSV.
     dic = {}
@@ -68,9 +82,9 @@ def filter_test_list(G, test_list):
     test_list_cleaned = [w for w in test_list_cleaned if G.incident(w)]
     return(test_list_cleaned)
 
-def levLoader(theta):
+def levLoader(theta, fn):
     # Reads the files with orthographic similarities and returns a dictionary {(word1, word2): sim}
-    fil = open("./levdist.csv" ,"r")
+    fil = open(fn ,"r")
     l = fil.readlines()
     l = l[1:]
     d = {}
@@ -117,7 +131,7 @@ def get_rbo(l1, l2, p=0.9):
             ls.add(x)
             if y != None: ss.add(y)
             x_d[d] = x_d[d - 1] + (1.0 if x in ss else 0.0) + (1.0 if y in ls else 0.0)
-            # calculate average overlap
+        # calculate average overlap
         sum1 += x_d[d] / d * pow(p, d)
 
     sum2 = 0.0
