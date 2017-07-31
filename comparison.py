@@ -1,4 +1,7 @@
 mapping = {'E': ":EN", 'D': ":NL"}
+import operator
+import math
+import sys
 from collections import Counter
 from scipy.stats import ttest_rel
 from utils import get_rbd
@@ -25,7 +28,7 @@ ncog = n_abs_ncog + n_con_ncog + v_abs_ncog + v_con_ncog
 cog = n_abs_cog + n_con_cog + v_abs_cog + v_con_cog
 
 np.random.seed(12345678)
-threshold_frequency = 0
+threshold_frequency = 1
 noise_list = ["x", "", None]
 
 def read_norm_data(fn):
@@ -46,10 +49,16 @@ def read_norm_data(fn):
 
 def normalize_dict(d, target=1.0):
     # Normalizes dictionary values to 1.
-    raw = sum(d.values())
+    raw = math.fsum(d.values())
     if raw == 0: return {}
     factor = target / raw
-    return {key: value * factor for key, value in d.items()}
+    for k in d:
+        d[k] = d[k]*factor
+    key_for_max = max(d.items(), key=operator.itemgetter(1))[0]
+    diff = 1.0 - math.fsum(d.values())
+    #print("discrepancy = " + str(diff))
+    d[key_for_max] += diff
+    return d
 
 def preprocess_word(w):
     # An auxiliary function to clean test files.
@@ -92,20 +101,22 @@ def read_test_data(condition):
     # Reads test data of Van Hell & De Groot (1998). CSV format needed.
 
     if condition[1] == "D":
-        DD_DE_DD_test_dict = read_test_file("./vanhell/DD1-DE2-DD3.csv")
-        DE_DD_test_dict = read_test_file("./vanhell/DE1-DD2.csv")
+        DD_DE_DD_test_dict = read_test_file("./vanhell/DD1-DE2-DD3.lemmas.csv")
+        DE_DD_test_dict = read_test_file("./vanhell/DE1-DD2.lemmas.csv")
 
         test_lists = [DD_DE_DD_test_dict['D0']['D0'],
                           DD_DE_DD_test_dict['D2']['D2'],
                           DE_DD_test_dict['D1']['D1']]
 
     elif condition[1] == "E":
-        EE_ED_EE_test_dict = read_test_file("./vanhell/EE1-ED2-EE3.csv")
-        ED_EE_test_dict = read_test_file("./vanhell/ED1-EE2.csv")
+        EE_ED_EE_test_dict = read_test_file("./vanhell/EE1-ED2-EE3.lemmas.csv")
+        ED_EE_test_dict = read_test_file("./vanhell/ED1-EE2.lemmas.csv")
 
         test_lists = [EE_ED_EE_test_dict['E0']['E0'],
                       EE_ED_EE_test_dict['E2']['E2'],
                       ED_EE_test_dict['E1']['E1']]
+    else:
+        sys.exit("Condition unknown!")
 
     gold_dict = {}
     for session in range(len(test_lists)):
@@ -114,7 +125,7 @@ def read_test_data(condition):
                 gold_dict[session] = {}
             if k[0] not in gold_dict[session]:
                 gold_dict[session][k[0]] = {}
-            if v > threshold_frequency:
+            if v > threshold_frequency and k[1] not in noise_list:
                 gold_dict[session][k[0]][k[1]] = v
         for d in gold_dict[session]:
             gold_dict[session][d] = normalize_dict(gold_dict[session][d])
@@ -129,13 +140,13 @@ def get_diff(d1, d2, test_words):
     apks10 = []
     for w in sorted(test_words):
         k = min(len(d1[w]), len(d2[w]))
-        dw1 = sorted(d1[w].items(), key=lambda x: (-x[1], x[0]))
-        dw2 = sorted(d2[w].items(), key=lambda x: (-x[1], x[0]))
-        lw1 = [e[0] for e in dw1]
-        lw2 = [e[0] for e in dw2]
-        dw1 = normalize_dict(dict(dw1[:k]))
-        dw2 = normalize_dict(dict(dw2[:k]))
-        tvd = 0.5 * sum(abs((dw1.get(resp) or 0) - (dw2.get(resp) or 0)) for resp in set(dw1) | set(dw2))
+        dw1_sorted = sorted(d1[w].items(), key=lambda x: (-x[1], x[0]))
+        dw2_sorted = sorted(d2[w].items(), key=lambda x: (-x[1], x[0]))
+        lw1 = [e[0] for e in dw1_sorted]
+        lw2 = [e[0] for e in dw2_sorted]
+        dw1 = normalize_dict(dict(dw1_sorted[:k]))
+        dw2 = normalize_dict(dict(dw2_sorted[:k]))
+        tvd = 0.5 * sum(abs((dw1.get(resp) or 0) - (dw2.get(resp) or 0)) for resp in sorted(set(dw1) | set(dw2)))
         rbd = get_rbd(lw1, lw2)
         apk = 1-metrics.apk(lw1, lw2, k)
         apk10 = 1 - metrics.apk(lw1, lw2, 10)
@@ -224,25 +235,75 @@ def read_aggregated_test_data():
 
     return(gold_dict)
 
+def read_aggregated_test_data_p1():
+    # Reads test data of Van Hell & De Groot (1998). CSV format needed.
+
+    DD_DE_DD_test_dict = read_aggregated_test_file("./vanhell/DD1-DE2-DD3.csv")
+    DE_DD_test_dict = read_aggregated_test_file("./vanhell/DE1-DD2.csv")
+    ED_EE_test_dict = read_aggregated_test_file("./vanhell/ED1-EE2.csv")
+    EE_ED_EE_test_dict = read_aggregated_test_file("./vanhell/EE1-ED2-EE3.csv")
+
+    DD_test_lists = [DD_DE_DD_test_dict['D']['D']]
+    gold_dict = {'DD':{},'DE':{},'EE':{},'ED':{}}
+    for tl in DD_test_lists:
+        for (c, r), f in Counter(tl).items():
+            if r != "":
+                if c not in gold_dict['DD']: gold_dict['DD'][c] = {}
+                if r not in gold_dict['DD'][c]: gold_dict['DD'][c][r] = 0
+                gold_dict['DD'][c][r] += f
+
+    EE_test_lists = [EE_ED_EE_test_dict['E']['E']]
+    for tl in EE_test_lists:
+        for (c, r), f in Counter(tl).items():
+            if r != "":
+                if c not in gold_dict['EE']: gold_dict['EE'][c] = {}
+                if r not in gold_dict['EE'][c]: gold_dict['EE'][c][r] = 0
+                gold_dict['EE'][c][r] += f
+
+    DE_test_lists = [DD_DE_DD_test_dict['D']['E']]
+    for tl in DE_test_lists:
+        for (c, r), f in Counter(tl).items():
+            if r != "":
+                if c not in gold_dict['DE']: gold_dict['DE'][c] = {}
+                if r not in gold_dict['DE'][c]: gold_dict['DE'][c][r] = 0
+                gold_dict['DE'][c][r] += f
+
+    ED_test_lists = [EE_ED_EE_test_dict['E']['D']]
+    for tl in ED_test_lists:
+        for (c, r), f in Counter(tl).items():
+            if r != "":
+                if c not in gold_dict['ED']: gold_dict['ED'][c] = {}
+                if r not in gold_dict['ED'][c]: gold_dict['ED'][c][r] = 0
+                gold_dict['ED'][c][r] += f
+
+    for d_of_d in gold_dict.values():
+        for k,d in d_of_d.items():
+            d_of_d[k] = {k: v for k, v in d.items() if v > threshold_frequency}
+
+    return(gold_dict)
+
 def print_results(tvds, rbds, apks, apks10, tvds2, rbds2, apks2, apks102):
-    print("TVD MEANS: in-group: %.3f, out-group, %.3f" % (np.median([i[1] for i in tvds]), np.median([i[1] for i in tvds2])))
-    #print(ttest_rel([i[1] for i in tvds], [j[1] for j in tvds2]))
-    print(wilcoxon([i[1] for i in tvds], [j[1] for j in tvds2]))
-    print("RBD MEANS: in-group: %.3f, out-group, %.3f" % (np.median([i[1] for i in rbds]), np.median([i[1] for i in rbds2])))
+    print("RBD MEANS: in-group: %.3f, out-group, %.3f" % (np.mean([i[1] for i in rbds]), np.mean([i[1] for i in rbds2])))
     #print(ttest_rel([i[1] for i in rbds], [j[1] for j in rbds2]))
     print(wilcoxon([i[1] for i in rbds], [j[1] for j in rbds2]))
-    print("APK MEANS: in-group: %.3f, out-group, %.3f" % (np.median([i[1] for i in apks]), np.median([i[1] for i in apks2])))
+    print("TVD MEANS: in-group: %.3f, out-group, %.3f" % (np.mean([i[1] for i in tvds]), np.mean([i[1] for i in tvds2])))
+    #print(ttest_rel([i[1] for i in tvds], [j[1] for j in tvds2]))
+    print(wilcoxon([i[1] for i in tvds], [j[1] for j in tvds2]))
+    print("APK MEANS: in-group: %.3f, out-group, %.3f" % (np.mean([i[1] for i in apks]), np.mean([i[1] for i in apks2])))
     #print(ttest_rel([i[1] for i in apks], [j[1] for j in apks2]))
     print(wilcoxon([i[1] for i in apks], [j[1] for j in apks2]))
-    print("APK (10) MEANS: in-group: %.3f, out-group, %.3f" % (np.median([i[1] for i in apks10]), np.median([i[1] for i in apks102])))
+    print("APK (10) MEANS: in-group: %.3f, out-group, %.3f" % (np.mean([i[1] for i in apks10]), np.mean([i[1] for i in apks102])))
     #print(ttest_rel([i[1] for i in apks10], [j[1] for j in apks102]))
     print(wilcoxon([i[1] for i in apks10], [j[1] for j in apks102]))
 
 if __name__ == "__main__":
 
-    test_data_session = read_test_data('DD')
+    condition = "DD"
 
-    test_data_aggregated = read_aggregated_test_data()['DD']
+    test_data_session = read_test_data(condition)
+
+    test_data_aggregated_p1 = read_aggregated_test_data()[condition]
+    test_data_aggregated = read_aggregated_test_data()[condition]
     norm_data_sf = read_norm_data("./SF_norms/sothflorida_complete.csv")
     norm_data_dutch = read_norm_data("./Dutch/shrunkdutch2.csv")
     #norm_data_eat = read_norm_data("./EAT/shrunkEAT.net_plain")
@@ -298,6 +359,7 @@ if __name__ == "__main__":
 
     print("P1/1 & P2 vs. P1/1+2 & M(English)")
     test_words = sorted(list(set(test_data_session[2].keys()).intersection(set(norm_data_sf.keys()))))
+    #test_words = [i for i in test_words if i in ncog]
     print(len(test_words), test_words)
     # if "trousers" in test_words: test_words.remove("trousers")
     tvds, rbds, apks, apks10 = get_diff(test_data_session[0], test_data_session[2], test_words)
