@@ -2,6 +2,8 @@
 # https://github.com/ragrawal/measures/blob/master/measures/rankedlist/RBO.py
 import numpy as np
 import csv
+import math
+import operator
 
 def read_frequencies(fn, lang):
     # Reads the file with Dutch word frequencies.
@@ -43,7 +45,7 @@ def normalize_tuple_list(l, weight):
         w1 = l[idx][0]
         w2 = l[idx][1]
         c = l[idx][2]
-        l[idx] = (w1, w2, weight*c/connections[w1])
+        l[idx] = (w1, w2, weight*c/float(connections[w1]))
     return l
 
 def normalize_tuple_dict(d, weight):
@@ -56,17 +58,21 @@ def normalize_tuple_dict(d, weight):
             connections[w1] = 0
         connections[w1] += c
     for (w1, w2), c in d.items():
-        d[(w1, w2)] = weight*c/connections[w1]
+        d[(w1, w2)] = weight*c/float(connections[w1])
     return d
 
 def normalize_dict(d, target=1.0):
-    #Normalizes dictionary values to 1.
-    if target == 0:
-        return {}
-    raw = sum(d.values())
-    if raw == 0: return{}
-    factor = target/raw
-    return {key:value*factor for key,value in d.items()}
+    # Normalizes dictionary values to 1 (or another target value).
+    raw = math.fsum(d.values())
+    if raw == 0: return {}
+    factor = target / raw
+    for k in d:
+        d[k] = d[k]*factor
+    key_for_max = max(d.items(), key=operator.itemgetter(1))[0]
+    diff = 1.0 - math.fsum(d.values())
+    #print("discrepancy = " + str(diff))
+    d[key_for_max] += diff
+    return d
 
 def invert_dict(d):
     # Inverts a dictionary of {string:list} pairs.

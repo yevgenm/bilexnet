@@ -15,7 +15,7 @@ with open("./Dutch/associationData.csv") as f:
     row1 = next(reader)
     writer.writerow(row1)
     for row in reader:
-        for idx in range(3,6):
+        for idx in range(2,6):
             token = row[idx].strip()
             if " " in token:
                 row[idx] = "x"

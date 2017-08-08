@@ -15,7 +15,8 @@ def read_test_file(fn):
         for row in test_reader:
             cue = row[1]
             responses_mixed = row[3:]
-            for cond_idx in range(n_conds):
+            #for cond_idx in range(n_conds):
+            for cond_idx in range(2):
                 cue_lang = cue_langs[cond_idx]
                 target_lang = target_langs[cond_idx]
                 if cue_lang not in resp_dict:

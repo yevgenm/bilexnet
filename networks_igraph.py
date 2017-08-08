@@ -19,8 +19,10 @@ class LexNet:
 
     def __init__(self):
         self.G = Graph()
-        self.alpha = parameters["spreading alpha"]
+        self.alpha = parameters["activation decay"]
         self.min_freq = parameters["frequency threshold"]
+        self.num_walks = parameters["number of walks"]
+        self.retrieval_algorighm = parameters["retrieval algorithm"]
 
     def clean_graph(self):
         # Removes noisy vertices from the graph.
@@ -35,28 +37,28 @@ class LexNet:
     def spread_activation(self, responses, depth):
         # Main function that spreads the activation starting from the given node(s) and returns a dictionary of responses with their (non-normalized) likelihoods.
         if depth == 0:
-            return ({})
+            return {}
         else:
             responses_current_level = dict()
             for vertex in sorted(responses):
                 weight = responses[vertex]
                 new = {}
                 for e in self.G.incident(vertex):
-                    if random.random() < self.alpha:
-                        new[self.G.vs[self.G.es[e].tuple[1]]['name']] = self.G.es[e]["weight"]
+                    adjacent_vertex = self.G.vs[self.G.es[e].tuple[1]]['name']
+                    if adjacent_vertex not in responses:
+                        new[adjacent_vertex] = self.G.es[e]["weight"]
                 total = sum(new.values())
                 if total == 0:
                     responses_single_word = {}
                 else:
-                    responses_single_word = {k: v / total * weight * self.alpha for k, v in new.items()}
-                responses_current_level = dict(
-                    sum((Counter(x) for x in [responses_current_level, responses_single_word]), Counter()))
+                    responses_single_word = {k: v / total * weight for k, v in new.items()}
+                responses_current_level = dict(sum((Counter(x) for x in [responses_current_level, responses_single_word]), Counter()))
             if not responses_current_level:
-                return ({})
+                return {}
             else:
                 responses_next_level = self.spread_activation(responses_current_level, depth - 1)
             final_vertices = dict(sum((Counter(x) for x in [responses_current_level, responses_next_level]), Counter()))
-            return (final_vertices)
+            return final_vertices
 
     def random_walk(self, responses, depth):
         if depth == 0:
@@ -64,23 +66,27 @@ class LexNet:
         else:
             new = dict()
             cue = list(responses.keys())[0]
-            for e in self.G.incident(cue): 
-                new[self.G.vs[self.G.es[e].tuple[1]]['name']] = self.G.es[e]["weight"]
+            for e in self.G.incident(cue):
+                adjacent_vertex = self.G.vs[self.G.es[e].tuple[1]]['name']
+                #if random.random() < self.alpha and adjacent_vertex not in responses:
+                if random.random() < self.alpha:
+                    new[adjacent_vertex] = self.G.es[e]["weight"]
             if not new:
                 return {cue:1.0}
-            draw = choice(list(new.keys()), 1, replace=False, p=list(new.values()))[0]
+            scores = np.array(list(new.values()))
+            draw = choice(list(new.keys()), 1, replace=False, p=scores/np.sum(scores))[0]
             return self.random_walk( {draw: 1.0} , depth-1 ) 
 
-    def multiple_walks(self, responses, depth, iter_num=1000):
-        return_stuff = {}
-        for num in range(iter_num):
+    def multiple_walks(self, responses, depth):
+        final_sample = {}
+        for num in range(self.num_walks):
             draw = list(self.random_walk(responses, depth))[0]
-            if draw in return_stuff:
-                return_stuff[draw] = return_stuff[draw] + 1
+            if draw in final_sample:
+                final_sample[draw] += 1
             else:
-                return_stuff[draw] = 1
-        return_stuff = {k:v for k,v in return_stuff.items() if v > 1}
-        return return_stuff
+                final_sample[draw] = 1
+        final_sample_filtered = {k:v for k,v in final_sample.items() if v > 1}
+        return final_sample_filtered
 
     def plot_activation(self, responses, vertices, edges, depth):
         # An auxiliary function that spreads activation for plotting a subgraph.
@@ -92,13 +98,14 @@ class LexNet:
                 weight = responses[vertex]
                 new = {}
                 for e in self.G.incident(vertex):
-                    if random.random() < self.alpha:
-                        new[self.G.vs[self.G.es[e].tuple[1]]['name']] = self.G.es[e]["weight"]
+                    adjacent_vertex = self.G.vs[self.G.es[e].tuple[1]]['name']
+                    if adjacent_vertex not in responses:
+                        new[adjacent_vertex] = self.G.es[e]["weight"]
                 total = sum(new.values())
                 if total == 0:
                     responses_single_word = {}
                 else:
-                    responses_single_word = {k: v / total * weight * self.alpha for k, v in new.items()}
+                    responses_single_word = {k: v / total * weight for k, v in new.items()}
                     for resp, wei in responses_single_word.items():
                         if resp not in vertices:
                             vertices.append(resp)
@@ -120,7 +127,7 @@ class LexNet:
         #G_sub.add_vertices(w)
         #G_sub.vs["name"] = [w]
         responses, vertices, edges = self.plot_activation(starting_vertex, [w], {}, depth)
-        edges_filtered = [(k[0],k[1],v) for k,v in edges.items() if v > 0.001]
+        edges_filtered = [(k[0],k[1],v) for k,v in edges.items() if v > 0.005]
         G_sub = Graph.TupleList(edges=edges_filtered, edge_attrs="weight", directed=True)
         visual_style = {}
         visual_style["vertex_size"] = 10
@@ -149,75 +156,98 @@ class LexNet:
         response_lang = extras["language mapping"][direction[1]]
         tvds = []
         rbds = []
+        jacs = []
         apks = []
         apks_10 = []
         tvd = 0
         rbd = 0
+        jac = 0
         apk = 0
         apk_10 = 0
         for w in test_list:
             gold_local = dict(gold[w])
-            gold_clean = {k: v for k, v in gold_local.items() if gold_local[k] > 1}
-            d_gold = utils.normalize_dict(gold_clean)
-            l_gold = sorted(d_gold.items(), key=lambda x: (-x[1], x[0]))
-            k_gold = [pair[0] for pair in l_gold]
-            starting_vertex = {w: 1.0}
-            responses = self.spread_activation(starting_vertex, depth)
-            #responses = self.multiple_walks(starting_vertex, depth)
-            if w in responses:
-                del responses[w]
-            if stimulus_lang != response_lang:
-                if w in translation_dict:
-                    for trnsl in translation_dict[w]:
-                        if trnsl in responses:
-                            del responses[trnsl]
-            responses_clean = {r: p for r, p in responses.items() if r[-3:] == response_lang}
-            d_resp = utils.normalize_dict(responses_clean)
-            l_resp = sorted(d_resp.items(), key=lambda x: (-x[1], x[0]))
-            k_resp = [pair[0] for pair in l_resp]
-            dm_resp = utils.normalize_dict({k: v for k, v in d_resp.items() if k in k_resp[:len(k_gold)]})
+            gold_clean = utils.normalize_dict({k: v for k, v in gold_local.items() if gold_local[k] > self.min_freq})
+
+            t_gold_sorted = sorted(gold_clean.items(), key=lambda x: (-x[1], x[0]))
+            l_gold = [e[0] for e in t_gold_sorted]
+            s_gold = set(l_gold[:parameters["jaccard k"]])
+
+            if w not in self.G.vs['name']:
+                responses_clean = {}
+            else:
+                starting_vertex = {w: 1.0}
+                if self.retrieval_algorighm == "spreading":
+                    responses = self.spread_activation(starting_vertex, depth)
+                elif self.retrieval_algorighm == "walks":
+                    responses = self.multiple_walks(starting_vertex, depth)
+                else:
+                    sys.exit("Unknown retrieval algorithm.")
+                if w in responses:
+                    del responses[w]
+                if stimulus_lang != response_lang:
+                    if w in translation_dict:
+                        for trnsl in translation_dict[w]:
+                            if trnsl in responses:
+                                del responses[trnsl]
+                responses_clean = utils.normalize_dict({r: p for r, p in responses.items() if r[-3:] == response_lang})
+
+            t_resp_sorted = sorted(responses_clean.items(), key=lambda x: (-x[1], x[0]))
+            l_resp = [e[0] for e in t_resp_sorted]
+            s_resp = set(l_resp[:parameters["jaccard k"]])
+
+            k = min(len(gold_clean), len(responses_clean))
+            d_gold = utils.normalize_dict(dict(t_gold_sorted[:k]))
+            d_resp = utils.normalize_dict(dict(t_resp_sorted[:k]))
+
             if verbose:
                 log_file.write("\tCUE: %s\n" % w)
                 if gold:
                     log_file.write("\t\tGOLD\n")
-                    for k, v in l_gold[:10]:
+                    for k, v in t_gold_sorted[:15]:
                         log_file.write("\t\t\t%s\t\t%.3f\n" % (k, v))
                 log_file.write("\t\tMAX DEPTH: %d\n" % depth)
-                for k, v in l_resp[:10]:
+                for k, v in t_resp_sorted[:15]:
                     log_file.write("\t\t\t%s\t\t%.3f\n" % (k, v))
                 log_file.flush()
             if gold:
-                apk_k = len(gold_clean)
-                tvd_w = 0.5 * sum(
-                    abs((d_gold.get(resp) or 0) - (dm_resp.get(resp) or 0)) for resp in set(d_gold) | set(dm_resp))
-                rbd_w = utils.get_rbd(k_gold, k_resp)
-                apk_w = 1 - metrics.apk(k_gold, k_resp, apk_k)
-                apk_w_10 = 1 - metrics.apk(k_gold, k_resp, 10)
+                if len(d_resp) == 0:
+                    tvd_w = 1
+                else:
+                    tvd_w = 0.5 * sum(abs((d_gold.get(resp) or 0) - (d_resp.get(resp) or 0)) for resp in set(d_gold) | set(d_resp))
+                rbd_w = utils.get_rbd(l_gold, l_resp)
+                jac_w = 1 - len(set.intersection(s_gold,s_resp))/float(len(set.union(s_gold, s_resp)))
+                apk_w = 1 - metrics.apk(l_gold, l_resp, len(l_gold))
+                apk_w_10 = 1 - metrics.apk(l_gold[:parameters["apk k"]], l_resp, parameters["apk k"])
                 tvd += tvd_w
                 rbd += rbd_w
+                jac += jac_w
                 apk += apk_w
                 apk_10 += apk_w_10
                 if log_file is not None:
                     log_file.write("\t\tTVD: %.3f\n" % tvd_w)
                     log_file.write("\t\tRBD: %.3f\n" % rbd_w)
+                    log_file.write("\t\tJAC: %.3f\n" % jac_w)
                     log_file.write("\t\tAPK(k): %.3f\n" % apk_w)
                     log_file.write("\t\tAPK(10): %.3f\n" % apk_w_10)
                 tvds.append(tvd_w)
                 rbds.append(rbd_w)
+                jacs.append(jac_w)
                 apks.append(apk_w)
                 apks_10.append(apk_w_10)
         if gold:
             tvd /= len(test_list)
             rbd /= len(test_list)
+            jac /= len(test_list)
             apk /= len(test_list)
             apk_10 /= len(test_list)
             if log_file is not None:
                 log_file.write("\tTotal variation distance: %.3f\n" % tvd)
                 log_file.write("\tRank-biased distance: %.3f\n" % rbd)
+                log_file.write("\tJaccard distance: %.3f\n" % jac)
                 log_file.write("\tAverage precision (distance, k): %.3f\n" % apk)
                 log_file.write("\tAverage precision (distance, 10): %.3f\n" % apk_10)
         if log_file is not None: log_file.flush()
-        return (tvds, rbds, apks, apks_10)
+        return (tvds, rbds, jacs, apks, apks_10)
 
 
 class LexNetMo(LexNet):
@@ -280,9 +310,11 @@ class LexNetBi(LexNet):
             edges.update(zip(df['cue'], df['asso' + str(i)]))
         weighted_edges = [(e[0][0] + l, e[0][1] + l, e[1]) for e in edges.items() if e[0][1] not in
                              extras["noise list"] and e[1] > self.min_freq]
-        vertices = [word + extras["language mapping"][lang] for word in
-                    set.union(set(df['cue']), set(df['asso1']))]
-                       #set.union(set(df['cue']), set(df['asso1']), set(df['asso2']), set(df['asso3']))]
+        # vertices = [word + extras["language mapping"][lang] for word in
+        #             set.union(set(df['cue']), set(df['asso1']))]
+        vertices = [word for word in
+                    set.union(set([i[0] for i in weighted_edges]), (set([i[1] for i in weighted_edges])))]
+        #set.union(set(df['cue']), set(df['asso1']), set(df['asso2']), set(df['asso3']))]
         weighted_edges = utils.normalize_tuple_list(weighted_edges, assoc_coeff)
         return weighted_edges, vertices
 
@@ -341,6 +373,8 @@ class LexNetBi(LexNet):
             edges = utils.normalize_tuple_list(edges, 1)
 
             biling = Graph.TupleList(edges=edges, edge_attrs="weight", directed=True)
+            biling.add_vertices(vertices_en)
+            biling.add_vertices(vertices_nl)
             #biling.write_pickle(fn)
             biling.write_ncol(fn, names="name")
         return (biling)

@@ -11,7 +11,7 @@ for i in l:
     
 f.close()
 
-f = open('/Users/amirardalankalantaridehgahi/Desktop/school/stevensonRA/clone/bilexnet/sothflorida_complete.csv' ,'r')
+f = open('./SF_norms/sothflorida_complete.csv' ,'r')
 l = f.readlines()
 for i in l:
     line = i.split(';')
@@ -22,8 +22,10 @@ f.close()
 
 written = open('zipf.csv','w')
 
-print(sorted(eng_set))
-raw_input()
+#print(sorted(eng_set))
+#raw_input()
+
+dir_name = "./ngrams/"
 goog = ['googlebooks-eng-all-1gram-20120701-a', 
         'googlebooks-eng-all-1gram-20120701-b',
         'googlebooks-eng-all-1gram-20120701-c',
@@ -52,9 +54,10 @@ goog = ['googlebooks-eng-all-1gram-20120701-a',
         'googlebooks-eng-all-1gram-20120701-z',
         ]
 l = None
+
 for zipf in goog:
     print(zipf)
-    f = open(zipf, 'r')
+    f = open(dir_name+zipf, 'r')
     
     
     prev_word = None

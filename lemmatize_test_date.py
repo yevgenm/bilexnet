@@ -1,9 +1,10 @@
+import os
 import csv
 import frog
 from nltk import pos_tag
 from nltk import WordNetLemmatizer
 from nltk.corpus import wordnet as wn
-
+import csv
 
 frog = frog.Frog(frog.FrogOptions(parser=False))
 lemmatizer = WordNetLemmatizer()
@@ -46,34 +47,58 @@ def lemmatize_word(word, lang):
         word = wn_lemmatizer(word)
     return word
 
-def read_test_file(fn):
+def read_test_file(fn, spell_dict, log_fn):
     # An auxiliary function that reads a single test file.
+
+    if os.path.exists(log_fn):
+        append_write = 'a'
+    else:
+        append_write = 'w'  # make a new file if not
+    log = open(log_fn, append_write)
 
     conditions = fn.split("/")[-1].split('.')[0].split('-')
     target_langs = [c[1] for c in conditions]
     n_conds = len(conditions)
+    cue_lang = conditions[0][0]
     with open(fn) as f, open(fn[:-4]+".lemmas.csv", 'w') as fw:
         test_reader = csv.reader(f, delimiter=",")
         test_writer = csv.writer(fw, delimiter=",")
         row1 = next(test_reader)
         test_writer.writerow(row1)
         for row in test_reader:
-            new_row = [row[0], row[1], row[2]]
+            cue = row[1]
+            cue_lemma = lemmatize_word(cue, cue_lang)
+            if cue_lemma in spell_dict and cue_lang == "E":
+                cue_lemma = spell_dict[cue_lemma]
+            log.write(cue_lang+"\t"+cue+"\t"+cue_lemma+"\n")
+            new_row = [row[0], cue_lemma, row[2]]
             for idx in range(3, len(row)):
                 response = preprocess_word(row[idx])
                 if response == "":
-                    lemma = ""
+                    lemma = "x"
                 else:
-                    cond_idx = idx % n_conds
+                    true_idx = idx - 3
+                    cond_idx = true_idx % n_conds
                     target_lang = target_langs[cond_idx]
-                    lemma = lemmatize_word(response, target_lang)
+                    lemma = lemmatize_word(response, target_lang).strip()
+                    if lemma in spell_dict and target_lang=="E":
+                        lemma = spell_dict[lemma]
+                    log.write(target_lang + "\t" + response + "\t" + lemma + "\n")
                 new_row.append(lemma)
             test_writer.writerow(new_row)
 
+    log.close()
+
 def main():
-    read_test_file("./vanhell/DD1-DE2-DD3.csv")
-    read_test_file("./vanhell/DE1-DD2.csv")
-    read_test_file("./vanhell/ED1-EE2.csv")
-    read_test_file("./vanhell/EE1-ED2-EE3.csv")
+    with open('./vanhell/spelling_correction', 'r') as spelling:
+        reader = csv.reader(spelling, delimiter="\t")
+        spell_dict = {rows[0]: rows[1] for rows in reader}
+
+    log_fn = "./vanhell/log_lemmas"
+    read_test_file("./vanhell/EE1-ED2-EE3.csv", spell_dict, log_fn)
+    read_test_file("./vanhell/DD1-DE2-DD3.csv", spell_dict, log_fn)
+    read_test_file("./vanhell/DE1-DD2.csv", spell_dict, log_fn)
+    read_test_file("./vanhell/ED1-EE2.csv", spell_dict, log_fn)
+
 
 main()
