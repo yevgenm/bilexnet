@@ -94,30 +94,30 @@ def main():
             tvd_base_an = rbd_base_an = jac_base_an = apk_base_an = apk_base_10_an = [0] * len(test_list)
 
         log_per_word_fn = res_dir_cond + "log_per_word_"+test_condition+".tsv"
-        #if os.path.exists(log_per_word_fn): append_write = 'a'
-        #else: append_write = 'w'  # make a new file if not
-        log_per_word = open(log_per_word_fn, 'w')
-        log_per_word.write("L1_assoc\tL2_assoc\tTE\torth\tasymm\t")
-        for w in test_list:
-            log_per_word.write("%s (tvd)\t%s (rbd)\t%s (jac)\t%s (apk_k)\t%s (apk_10)\t" % (w, w, w, w, w))
+        if os.path.exists(log_per_word_fn):
+            log_per_word = open(log_per_word_fn, 'a')
+        else:
+            log_per_word = open(log_per_word_fn, 'w')
+            log_per_word.write("L1_assoc\tL2_assoc\tTE\torth\tasymm\t")
+            for w in test_list:
+                log_per_word.write("%s (tvd)\t%s (rbd)\t%s (jac)\t%s (apk_k)\t%s (apk_10)\t" % (w, w, w, w, w))
+            log_per_word.write("\n")
+            log_per_word.flush()
 
-        log_per_word.write("\n")
-        log_per_word.flush()
-
-        log_per_word.write("%s\t%s\t%s\t%s\t%s\t" % ("base-an", "base-an", "base-an", "base-sa", "base-an"))
-        for idx in range(len(test_list)):
-            log_per_word.write("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t" % (tvd_base_an[idx], rbd_base_an[idx], jac_base_an[idx], apk_base_an[idx], apk_base_10_an[idx]))
-        log_per_word.write("\n")
-        log_per_word.write("%s\t%s\t%s\t%s\t%s\t" % ("base-sa", "base-sa", "base-sa", "base-sa", "base-sa"))
-        for idx in range(len(test_list)):
-            log_per_word.write("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t" % (tvd_base_sa[idx], rbd_base_sa[idx], jac_base_sa[idx], apk_base_sa[idx], apk_base_10_sa[idx]))
-        log_per_word.write("\n")
-        log_per_word.flush()
+            log_per_word.write("%s\t%s\t%s\t%s\t%s\t" % ("base-an", "base-an", "base-an", "base-sa", "base-an"))
+            for idx in range(len(test_list)):
+                log_per_word.write("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t" % (tvd_base_an[idx], rbd_base_an[idx], jac_base_an[idx], apk_base_an[idx], apk_base_10_an[idx]))
+            log_per_word.write("\n")
+            log_per_word.write("%s\t%s\t%s\t%s\t%s\t" % ("base-sa", "base-sa", "base-sa", "base-sa", "base-sa"))
+            for idx in range(len(test_list)):
+                log_per_word.write("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t" % (tvd_base_sa[idx], rbd_base_sa[idx], jac_base_sa[idx], apk_base_sa[idx], apk_base_10_sa[idx]))
+            log_per_word.write("\n")
+            log_per_word.flush()
 
         meta_args = [mode, test_list, test_condition, fn_nl, fn_en, en_nl_dic, tvd_base_an, rbd_base_an, jac_base_an, apk_base_an, apk_base_10_an, tvd_base_sa, rbd_base_sa, jac_base_sa, apk_base_sa, apk_base_10_sa, gold_dict, res_dir_cond]
 
         par = [ [L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio]
-                for L1_assoc_coeff in [1, 2, 5, 10, 20]
+                for L1_assoc_coeff in [1, 2, 5, 10, 15, 20, 25, 30]
                 #for L2_assoc_coeff in [0, 1, 2, 5, 10, 20]
                 for L2_assoc_coeff in [1, 2, 5, 10, 20]
                 for TE_coeff in [1, 2, 5, 10, 20]

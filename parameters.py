@@ -9,6 +9,7 @@ parameters = {
     "retrieval algorithm": "spreading",
     "number of walks": 500,
     "frequency threshold": 1,
+    "return allowed": True,
     # "use frequencies": False,
     "use frequencies": True,
     # "orth edge type": "orth",

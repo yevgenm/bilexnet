@@ -23,6 +23,7 @@ class LexNet:
         self.min_freq = parameters["frequency threshold"]
         self.num_walks = parameters["number of walks"]
         self.retrieval_algorighm = parameters["retrieval algorithm"]
+        self.return_allowed = parameters["return allowed"]
 
     def clean_graph(self):
         # Removes noisy vertices from the graph.
@@ -45,7 +46,7 @@ class LexNet:
                 new = {}
                 for e in self.G.incident(vertex):
                     adjacent_vertex = self.G.vs[self.G.es[e].tuple[1]]['name']
-                    if adjacent_vertex not in responses:
+                    if self.return_allowed or adjacent_vertex not in responses:
                         new[adjacent_vertex] = self.G.es[e]["weight"]
                 total = sum(new.values())
                 if total == 0:
@@ -68,8 +69,7 @@ class LexNet:
             cue = list(responses.keys())[0]
             for e in self.G.incident(cue):
                 adjacent_vertex = self.G.vs[self.G.es[e].tuple[1]]['name']
-                #if random.random() < self.alpha and adjacent_vertex not in responses:
-                if random.random() < self.alpha:
+                if (random.random() < self.alpha) and (self.return_allowed or adjacent_vertex not in responses):
                     new[adjacent_vertex] = self.G.es[e]["weight"]
             if not new:
                 return {cue:1.0}
@@ -99,7 +99,7 @@ class LexNet:
                 new = {}
                 for e in self.G.incident(vertex):
                     adjacent_vertex = self.G.vs[self.G.es[e].tuple[1]]['name']
-                    if adjacent_vertex not in responses:
+                    if self.return_allowed or adjacent_vertex not in responses:
                         new[adjacent_vertex] = self.G.es[e]["weight"]
                 total = sum(new.values())
                 if total == 0:
