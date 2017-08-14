@@ -106,6 +106,8 @@ def levLoader(theta, fn):
 def syntLoader(fn, words):
     # Reads the files with syntagmatic cooccurence information and returns a dictionary {(word1, word2): sim}
     df = pandas.read_csv(fn, sep="\t", na_values="", keep_default_na=False)
+    df["w1"] = df["w1"] + ":EN"
+    df["w2"] = df["w2"] + ":EN"
     df = df[(df['w1'].isin(words)) & (df['w2'].isin(words))]
     d = df.set_index(["w1","w2"]).to_dict()
     return d
