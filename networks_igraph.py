@@ -24,6 +24,7 @@ class LexNet:
         self.num_walks = parameters["number of walks"]
         self.retrieval_algorighm = parameters["retrieval algorithm"]
         self.return_allowed = parameters["return allowed"]
+        self.syntagmatic_edges = parameters["use syntagmatic edges"]
 
     def clean_graph(self):
         # Removes noisy vertices from the graph.
@@ -77,6 +78,25 @@ class LexNet:
             draw = choice(list(new.keys()), 1, replace=False, p=scores/np.sum(scores))[0]
             return self.random_walk( {draw: 1.0} , depth-1 ) 
 
+    def random_walk_with_stopwords(self, cue, depth, alpha, stopwords, response_lang):
+        if depth == 0 or random.random() >= alpha:
+            response = cue
+            if response is None or ((response not in stopwords) and (response[-3:] == response_lang)):
+                return response
+            else:
+                return self.random_walk_with_stopwords( response , 1, 1, stopwords, response_lang)
+        else:
+            new = dict()
+            for e in self.G.incident(cue):
+                adjacent_vertex = self.G.vs[self.G.es[e].tuple[1]]['name']
+                if self.return_allowed or adjacent_vertex != cue:
+                    new[adjacent_vertex] = self.G.es[e]["weight"]
+            if not new:
+                return None
+            scores = np.array(list(new.values()))
+            response = choice(list(new.keys()), 1, replace=False, p=scores/np.sum(scores))[0]
+            return self.random_walk_with_stopwords( response , depth-1, alpha, stopwords, response_lang )
+
     def multiple_walks(self, responses, depth):
         final_sample = {}
         for num in range(self.num_walks):
@@ -85,6 +105,18 @@ class LexNet:
                 final_sample[draw] += 1
             else:
                 final_sample[draw] = 1
+        final_sample_filtered = {k:v for k,v in final_sample.items() if v > 1}
+        return final_sample_filtered
+
+    def multiple_walks_with_stopwords(self, cue, depth, alpha, stopwords, response_lang):
+        final_sample = {}
+        for num in range(self.num_walks):
+            draw = self.random_walk_with_stopwords(cue, depth, alpha, stopwords, response_lang)
+            if draw is not None:
+                if draw in final_sample:
+                    final_sample[draw] += 1
+                else:
+                    final_sample[draw] = 1
         final_sample_filtered = {k:v for k,v in final_sample.items() if v > 1}
         return final_sample_filtered
 
@@ -179,9 +211,12 @@ class LexNet:
                 if self.retrieval_algorighm == "spreading":
                     responses = self.spread_activation(starting_vertex, depth)
                 elif self.retrieval_algorighm == "walks":
-                    responses = self.multiple_walks(starting_vertex, depth)
+                    #responses = self.multiple_walks(starting_vertex, depth)
+                    responses = self.multiple_walks_with_stopwords(w, depth, self.alpha, [w], response_lang)
                 else:
                     sys.exit("Unknown retrieval algorithm.")
+                if None in responses:
+                    del responses[None]
                 if w in responses:
                     del responses[w]
                 if stimulus_lang != response_lang:
@@ -250,6 +285,22 @@ class LexNet:
         return (tvds, rbds, jacs, apks, apks_10)
 
 
+    def test_network_single_walk(self, test_list, depth, direction, translation_dict=None):
+        if translation_dict is None:
+            translation_dict = {}
+        response_lang = extras["language mapping"][direction[1]]
+        responses = {}
+        for w in test_list:
+            if w in self.G.vs['name']:
+                starting_vertex = {w: 1.0}
+                stopwords = [w] + (translation_dict.get(w) or [])
+                response = self.random_walk_with_stopwords(w, depth, self.alpha, stopwords, response_lang)
+                # response = list(self.random_walk_with_stopwords(starting_vertex, depth, self.alpha, stopwords, response_lang).keys())[0]
+                if response is not None:
+                    responses[w] = response
+        return responses
+
+
 class LexNetMo(LexNet):
 
     def __init__(self, fn, language):
@@ -291,13 +342,13 @@ class LexNetMo(LexNet):
 
 class LexNetBi(LexNet):
 
-    def __init__(self, fn_l1, fn_l2, l2_l1_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio, mode):
+    def __init__(self, fn_l1, fn_l2, l2_l1_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio, mode):
         super().__init__()
         self.orth_threshold = parameters["orthographic threshold"]
         self.cogn_threshold = parameters["cognate threshold"]
         self.use_freq = parameters["use frequencies"]
         self.orth_edge_type = parameters["orth edge type"]
-        self.G = self.construct_bilingual_graph(fn_l1, fn_l2, l2_l1_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio, mode)
+        self.G = self.construct_bilingual_graph(fn_l1, fn_l2, l2_l1_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio, mode)
 
     def get_assoc_edges(self, fn, lang, assoc_coeff):
         l = extras["language mapping"][lang]
@@ -334,6 +385,15 @@ class LexNetBi(LexNet):
 
         return lev_edges
 
+    def get_synt_edges(self, vertices_en, synt_coeff):
+        synt_weights = utils.syntLoader("./coca/ngrams.lemmas", vertices_en)
+        #synt_edges = {k: v for k, v in synt_weights.items() if k[0] in vertices_en and k[1] in vertices_en}
+        synt_weights_inverse = {(tpl[1], tpl[0]): w for tpl,w in synt_weights.items()}
+        synt_weights.update(synt_weights_inverse)
+        synt_edges = utils.normalize_tuple_dict(synt_weights, synt_coeff)
+
+        return synt_edges
+
     def get_TE_edges(self, vertices_en, vertices_nl, en_nl_dic, TE_coeff, asymm_ratio):
         TE_all = [(en,nl) for en, nls in en_nl_dic.items() for nl in nls]
         if self.use_freq:
@@ -350,10 +410,10 @@ class LexNetBi(LexNet):
         TE_edges.update(TE_edges_nl_en)
         return TE_edges
 
-    def construct_bilingual_graph(self, fn_nl, fn_en, en_nl_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio, mode):
+    def construct_bilingual_graph(self, fn_nl, fn_en, en_nl_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio, mode):
         # Constructs a bilingual graph with various edges and pickles it. If a pickled file found, loads it instead.
         fn = "./biling_graph/orth_"+str(self.orth_edge_type)+"_freq_"+str(self.use_freq)+"/biling_dump_L1_assoc_" + str(L1_assoc_coeff) + "_L2_assoc_" + str(L2_assoc_coeff) + "_TE_" + str(TE_coeff) + "_orth_" + str(orth_coeff) + "_asymm_" + str(asymm_ratio)
-        if os.path.isfile(fn):
+        if os.path.isfile(fn+"banana"):
             #biling = read(fn, format="pickle")
             biling = read(fn, format="ncol")
         else:
@@ -361,6 +421,9 @@ class LexNetBi(LexNet):
             edges_nl, vertices_nl = self.get_assoc_edges(fn_nl, "D", L1_assoc_coeff)
             # edges_en, vertices_en = self.get_assoc_edges(fn_en + "_plain", "E")
             edges_en, vertices_en = self.get_assoc_edges(fn_en, "E", L2_assoc_coeff)
+
+            edges_en_synt = self.get_synt_edges(vertices_en, synt_coeff)
+            edges_en = [(k[0], k[1], v) for k, v in (Counter(edges_en) + Counter(edges_en_synt)).items()]
             
             orth_edges = self.get_orth_edges(vertices_en, vertices_nl, orth_coeff, mode, asymm_ratio)
             TE_edges = self.get_TE_edges(vertices_en, vertices_nl, en_nl_dic, TE_coeff, asymm_ratio)
@@ -376,5 +439,5 @@ class LexNetBi(LexNet):
             biling.add_vertices(vertices_en)
             biling.add_vertices(vertices_nl)
             #biling.write_pickle(fn)
-            biling.write_ncol(fn, names="name")
+            # biling.write_ncol(fn, names="name")
         return (biling)

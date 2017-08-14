@@ -4,6 +4,7 @@ import numpy as np
 import csv
 import math
 import operator
+import pandas
 
 def read_frequencies(fn, lang):
     # Reads the file with Dutch word frequencies.
@@ -100,6 +101,13 @@ def levLoader(theta, fn):
         sim = float(w[2].strip('\n').strip('\r'))
         if sim >= theta:
             d[(w[0]+":EN", w[1]+":NL")] = sim
+    return d
+
+def syntLoader(fn, words):
+    # Reads the files with syntagmatic cooccurence information and returns a dictionary {(word1, word2): sim}
+    df = pandas.read_csv(fn, sep="\t", na_values="", keep_default_na=False)
+    df = df[(df['w1'].isin(words)) & (df['w2'].isin(words))]
+    d = df.set_index(["w1","w2"]).to_dict()
     return d
 
 def get_rbo(l1, l2, p=0.9):

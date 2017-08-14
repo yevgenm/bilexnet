@@ -4,11 +4,11 @@ from parameters import *
 
 def test_model(args):
 
-    mode, test_list, test_condition, fn_nl, fn_en, en_nl_dic, tvd_base_an, rbd_base_an, jac_base_an, apk_base_an, apk_base_10_an, tvd_base_sa, rbd_base_sa, jac_base_sa, apk_base_sa, apk_base_10_sa, gold_dict, res_dir_cond, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio = args
+    mode, test_list, test_condition, fn_nl, fn_en, en_nl_dic, tvd_base_an, rbd_base_an, jac_base_an, apk_base_an, apk_base_10_an, tvd_base_sa, rbd_base_sa, jac_base_sa, apk_base_sa, apk_base_10_sa, gold_dict, res_dir_cond, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio = args
     log_fn = res_dir_cond + "log_" + test_condition + "_L1_assoc_" + str(L1_assoc_coeff) + "_L2_assoc_" + str(
         L2_assoc_coeff) + "_TE_" + str(TE_coeff) + "_orth_" + str(orth_coeff) + "_asymm_" + str(asymm_ratio)
     log_file = open(log_fn, "w")
-    biling = LexNetBi(fn_nl, fn_en, en_nl_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio, mode)
+    biling = LexNetBi(fn_nl, fn_en, en_nl_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio, mode)
 
     if test_condition == "ED":
         dict_for_filtering = en_nl_dic
@@ -35,7 +35,7 @@ def test_model(args):
 
     log_file.close()
 
-    return(L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio, tvd_m, rbd_m, jac_m, apk_m, apk_m_10)
+    return(L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio, tvd_m, rbd_m, jac_m, apk_m, apk_m_10)
 
 
 def main():
@@ -116,13 +116,12 @@ def main():
 
         meta_args = [mode, test_list, test_condition, fn_nl, fn_en, en_nl_dic, tvd_base_an, rbd_base_an, jac_base_an, apk_base_an, apk_base_10_an, tvd_base_sa, rbd_base_sa, jac_base_sa, apk_base_sa, apk_base_10_sa, gold_dict, res_dir_cond]
 
-        par = [ [L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio]
+        par = [ [L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio]
                 for L1_assoc_coeff in [1, 2, 5, 10, 15, 20, 25, 30]
-                #for L2_assoc_coeff in [0, 1, 2, 5, 10, 20]
-                for L2_assoc_coeff in [1, 2, 5, 10, 20]
+                for L2_assoc_coeff in [0, 1, 2, 5, 10, 20]
                 for TE_coeff in [1, 2, 5, 10, 20]
-                #for orth_coeff in [0, 1, 2, 5, 10, 20]
-                for orth_coeff in [1, 2, 5, 10, 20]
+                for orth_coeff in [0, 1, 2, 5, 10, 20]
+                for synt_coeff in [0, 1, 2, 5, 10, 20]
                 for asymm_ratio in [1]
                 # if L1_assoc_coeff==1 or not (L1_assoc_coeff==TE_coeff==L2_assoc_coeff==orth_coeff) and L1_assoc_coeff >= L2_assoc_coeff
                 # for (L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio) in [[5,2,2,0,1],[20,5,5,0,1],[5,1,1,0,1],[2,2,1,0,1]]
@@ -135,7 +134,7 @@ def main():
         #    run_test(a)
 
         pool = Pool(workers)
-        for L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio, tvd_m, rbd_m, jac_m, apk_m, apk_m_10 in pool.imap(test_model, args):
+        for L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio, tvd_m, rbd_m, jac_m, apk_m, apk_m_10 in pool.imap(test_model, args):
             log_per_word.write("%d\t%d\t%d\t%d\t%d\t" % (L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio))
             for idx in range(len(test_list)):
                 log_per_word.write("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t" % (tvd_m[idx], rbd_m[idx], jac_m[idx], apk_m[idx], apk_m_10[idx]))

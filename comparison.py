@@ -41,7 +41,7 @@ def read_norm_data(fn):
     # Constructs the big graph from CSV.
     df = pandas.read_csv(fn, sep=";", na_values="", keep_default_na=False)
     tuples = Counter()
-    for i in range(1,4):
+    for i in range(1,2):
         tuples.update(zip(df['cue'], df['asso'+str(i)]))
     dict = {}
     for t,v in tuples.items():
