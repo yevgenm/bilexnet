@@ -109,7 +109,7 @@ def syntLoader(fn, words):
     df["w1"] = df["w1"] + ":EN"
     df["w2"] = df["w2"] + ":EN"
     df = df[(df['w1'].isin(words)) & (df['w2'].isin(words))]
-    d = df.set_index(["w1","w2"]).to_dict()
+    d = df.set_index(["w1","w2"]).to_dict()["score"]
     return d
 
 def get_rbo(l1, l2, p=0.9):
