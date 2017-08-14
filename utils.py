@@ -5,6 +5,9 @@ import csv
 import math
 import operator
 import pandas
+import preprocess
+
+
 
 def read_frequencies(fn, lang):
     # Reads the file with Dutch word frequencies.
@@ -20,6 +23,37 @@ def read_frequencies(fn, lang):
     return freq_dict
 
 
+
+def read_alignment_frequencies(fn="en-nl.refined.dic",Dutchlemma=0):
+    '''
+    set Dutchlemma to 1 in order for the ducth words to be lemmatized
+    '''
+    if Dutchlemma:
+        import frog
+        frog = frog.Frog(frog.FrogOptions(parser=False))
+        
+    freq = {}
+    with open(fn) as f:
+        reader = csv.reader(f, skipinitialspace=True, quotechar=None, delimiter="\t")
+        for row in reader:
+            if len(row) == 2 and len(row[0].split()) ==2:
+                words = [int(row[0].split()[0]), row[0].split()[1], row[1]]
+                eng = preprocess.lemmatizer(words[1])
+            
+            
+                if Dutchlemma:
+                    dutch = frog.process(words[2])  ### USED FROM dutch_lemmatizer.py
+                    
+                else:
+                    dutch = words[2]
+                    
+                freq[(eng.lower(), dutch.lower())]=words[0]
+    return freq
+            
+    
+    
+    
+    
 def read_dict(fn):
     # Reads an English-Dutch dictionary from CSV.
     dic = {}
@@ -164,3 +198,7 @@ def get_rbo(l1, l2, p=0.9):
 
 def get_rbd(l1, l2):
     return(1-get_rbo(l1,l2))
+
+
+
+
