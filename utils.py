@@ -191,4 +191,3 @@ def get_rbd(l1, l2):
 
 
 
-read_alignment_frequencies()
