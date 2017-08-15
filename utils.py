@@ -5,7 +5,6 @@ import csv
 import math
 import operator
 import pandas
-import preprocess
 
 
 
@@ -24,30 +23,21 @@ def read_frequencies(fn, lang):
 
 
 
-def read_alignment_frequencies(fn="en-nl.refined.dic",Dutchlemma=0):
-    '''
-    set Dutchlemma to 1 in order for the ducth words to be lemmatized
-    '''
-    if Dutchlemma:
-        import frog
-        frog = frog.Frog(frog.FrogOptions(parser=False))
-        
+def read_alignment_frequencies(fn="en-nl.refined.dic.lemmas.csv"):
+   
+
     freq = {}
     with open(fn) as f:
         reader = csv.reader(f, skipinitialspace=True, quotechar=None, delimiter="\t")
         for row in reader:
-            if len(row) == 2 and len(row[0].split()) ==2:
-                words = [int(row[0].split()[0]), row[0].split()[1], row[1]]
-                eng = preprocess.lemmatizer(words[1])
-            
-            
-                if Dutchlemma:
-                    dutch = frog.process(words[2])  ### USED FROM dutch_lemmatizer.py
-                    
-                else:
-                    dutch = words[2]
-                    
+            #print(row)
+            words = row[0].split(',')
+            #print(words)
+            if len(words)==3:
+                eng = words[1]
+                dutch = words[2]
                 freq[(eng.lower(), dutch.lower())]=words[0]
+                
     return freq
             
     
@@ -201,4 +191,4 @@ def get_rbd(l1, l2):
 
 
 
-
+read_alignment_frequencies()
