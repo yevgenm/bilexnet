@@ -9,7 +9,7 @@ CONVENTIONS ::::
     '<' indictaes DUTCH to ENGLISH direction
     
     dictionaries:::
-        cue: dict(associate,value)
+        cue: dict(associate1:value1, associate2:value2 .........)
         
     
     FINAL produced file format::
