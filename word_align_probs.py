@@ -116,7 +116,7 @@ def dutch_to_eng_dict(fil,Dutchlemma=0 ):
             dutch = cue
             if dutch != '':
                 if Dutchlemma:
-                    dutch = rog.process(dutch)
+                    dutch = frog.process(dutch)
 
                 if dutch not in freq:
                     freq[dutch] = dict()
