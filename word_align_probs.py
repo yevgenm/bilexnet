@@ -199,4 +199,4 @@ def csv_writer(Dlemma=0):
 if __name__ == "__main__":
      #eng_to_dutch_dict('hmm/1.params.txt')
      #dutch_to_eng_dict('hmm/2.params.txt')
-     csv_writer()
+     csv_writer(0)
