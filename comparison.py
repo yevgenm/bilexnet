@@ -393,6 +393,6 @@ if __name__ == "__main__":
     tvds2, rbds2, jacs2, apks2, apks102 = get_diff(test_data_aggregated_en, norm_data_sf, test_words)
     print_results(tvds, rbds, jacs, apks, apks10, tvds2, rbds2, jacs2, apks2, apks102)
 
-    test_words_en = nouns_en
-    test_words_nl = nouns_nl
-    get_diff_words(test_data_aggregated_en, norm_data_sf, test_data_aggregated_nl, norm_data_dutch, test_words_en, test_words_nl)
+    #test_words_en = nouns_en
+    #test_words_nl = nouns_nl
+    #get_diff_words(test_data_aggregated_en, norm_data_sf, test_data_aggregated_nl, norm_data_dutch, test_words_en, test_words_nl)

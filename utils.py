@@ -23,20 +23,18 @@ def read_frequencies(fn, lang):
 
 
 
-def read_alignment_frequencies(fn="en-nl.refined.dic.lemmas.csv"):
+def read_alignment_frequencies(fn):
    
 
     freq = {}
     with open(fn) as f:
         reader = csv.reader(f, skipinitialspace=True, quotechar=None, delimiter="\t")
         for row in reader:
-            #print(row)
-            words = row[0].split(',')
-            #print(words)
+            words = row[0].strip().split(',')
             if len(words)==3:
-                eng = words[1]
-                dutch = words[2]
-                freq[(eng.lower(), dutch.lower())]=words[0]
+                eng = words[1].strip().lower()+":EN"
+                dutch = words[2].strip().lower()+":NL"
+                freq[(eng, dutch)] = int(words[0])
                 
     return freq
             
@@ -62,7 +60,7 @@ def normalize_tuple_list(l, weight):
     if weight == 0:
         return []
     connections = {}
-    for (w1, w2, c) in l:
+    for (w1, w2, c) in sorted(l):
         if w1 not in connections:
             connections[w1] = 0
         connections[w1] += c
@@ -78,11 +76,11 @@ def normalize_tuple_dict(d, weight):
     if weight == 0:
         return {}
     connections = {}
-    for (w1, w2), c in d.items():
+    for (w1, w2), c in sorted(d.items()):
         if w1 not in connections:
             connections[w1] = 0
         connections[w1] += c
-    for (w1, w2), c in d.items():
+    for (w1, w2), c in sorted(d.items()):
         d[(w1, w2)] = weight*c/float(connections[w1])
     return d
 
@@ -93,10 +91,10 @@ def normalize_dict(d, target=1.0):
     factor = target / raw
     for k in d:
         d[k] = d[k]*factor
-    key_for_max = max(d.items(), key=operator.itemgetter(1))[0]
-    diff = 1.0 - math.fsum(d.values())
+    #key_for_max = max(sorted(d.items()), key=operator.itemgetter(1))[0]
+    #diff = 1.0 - math.fsum(d.values())
     #print("discrepancy = " + str(diff))
-    d[key_for_max] += diff
+    #d[key_for_max] += diff
     return d
 
 def invert_dict(d):
@@ -129,7 +127,7 @@ def levLoader(theta, fn):
 
 def syntLoader(fn, words):
     # Reads the files with syntagmatic cooccurence information and returns a dictionary {(word1, word2): sim}
-    df = pandas.read_csv(fn, sep="\t", na_values="", keep_default_na=False)
+    df = pandas.read_csv(fn, sep=",", na_values="", keep_default_na=False)
     df["w1"] = df["w1"] + ":EN"
     df["w2"] = df["w2"] + ":EN"
     df = df[(df['w1'].isin(words)) & (df['w2'].isin(words))]

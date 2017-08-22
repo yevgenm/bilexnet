@@ -11,16 +11,17 @@ def main():
     en_nl_dic = utils.read_dict("./dict/dictionary.csv")
     nl_en_dic = utils.invert_dict(en_nl_dic)
 
-    L1_assoc_coeff = 20
-    L2_assoc_coeff = 10
-    TE_coeff = 6
+    L1_assoc_coeff = 30
+    L2_assoc_coeff = 2
+    TE_coeff = 5
     orth_coeff = 5
+    synt_coeff = 0
     asymm_ratio = 1
 
     monoling = {"E": LexNetMo(fn=fn_en, language="en"),
                 "D": LexNetMo(fn=fn_nl, language="nl")}
     mode = parameters["orth edge type"]
-    biling = LexNetBi(fn_nl, fn_en, en_nl_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio, mode)
+    biling = LexNetBi(fn_nl, fn_en, en_nl_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio, mode)
 
     gold_dict = read_test_data()
 
@@ -37,7 +38,7 @@ def main():
         test_list = test_wordlist[cue_lang]
 
         #l = ["duty", "cause", "opportunity", "attempt", "ease", "revenge", "truth", "conscience", "memory", "faith", "demand", "possession", "care", "advantage", "shop", "mirror", "rifle", "potato", "knife", "bottle", "skirt", "flower", "tree", "farm", "hospital", "bird", "bike", "jail", "insight", "chance", "shame", "plan", "motive", "block", "quality", "hell", "figure", "method", "principle", "information", "metal", "circle", "panic", "shoulder", "season", "finger", "captain", "daughter", "pepper", "slave", "apple", "snow", "winter", "coffee", "rose", "police", "train", "doctor"]
-        l = ["apple"]
+        l = ["ease", "shop", "attempt"]
         plot_list = [i+":EN" for i in l]
         for w in plot_list:
             monoling[cue_lang].plot_subgraph(w, parameters["baseline depth"], "mon")

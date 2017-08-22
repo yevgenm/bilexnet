@@ -6,7 +6,7 @@ def test_model(args):
 
     mode, test_list, test_condition, fn_nl, fn_en, en_nl_dic, tvd_base_an, rbd_base_an, jac_base_an, apk_base_an, apk_base_10_an, tvd_base_sa, rbd_base_sa, jac_base_sa, apk_base_sa, apk_base_10_sa, gold_dict, res_dir_cond, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio = args
     log_fn = res_dir_cond + "log_" + test_condition + "_L1_assoc_" + str(L1_assoc_coeff) + "_L2_assoc_" + str(
-        L2_assoc_coeff) + "_TE_" + str(TE_coeff) + "_orth_" + str(orth_coeff) + "_asymm_" + str(asymm_ratio)
+        L2_assoc_coeff) + "_TE_" + str(TE_coeff) + "_orth_" + str(orth_coeff) + "_synt_" + str(synt_coeff) + "_asymm_" + str(asymm_ratio)
     log_file = open(log_fn, "w")
     biling = LexNetBi(fn_nl, fn_en, en_nl_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio, mode)
 
@@ -17,8 +17,8 @@ def test_model(args):
     else:
         dict_for_filtering = None
 
-    log_file.write("NET:%s, DEPTH:%i, L1 ASSOC: %i, L2 ASSOC: %i, TE:%i, ORTH:%i, ASYMM: %i\n" % ("bi", parameters[
-        "model depth"], L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio))
+    log_file.write("NET:%s, DEPTH:%i, L1 ASSOC: %i, L2 ASSOC: %i, TE:%i, ORTH:%i, SYNT:%i, ASYMM: %i\n" % ("bi", parameters[
+        "model depth"], L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio))
     tvd_m, rbd_m, jac_m, apk_m, apk_m_10 = biling.test_network(test_list, parameters["model depth"], test_condition, translation_dict=dict_for_filtering, gold_full=gold_dict, verbose=True, log_file=log_file)
 
     log_file.write("TVD t-test vs. AN: T=%.2f, p=%.3f\n" % (ttest_rel(tvd_base_an, tvd_m)[0], ttest_rel(tvd_base_an, tvd_m)[1]))
@@ -81,13 +81,13 @@ def main():
         test_list = test_wordlist[cue_lang]
 
         if cue_lang==target_lang:
-            log_base_file = open(res_dir_cond + "log_base_sa_"+test_condition, 'w')
-            log_base_file.write("NET:%s, DEPTH:%i\n" % (target_lang, parameters["baseline depth"]))
-            tvd_base_sa, rbd_base_sa, jac_base_sa, apk_base_sa, apk_base_10_sa = monoling[target_lang].test_network(test_list, parameters["baseline depth"], test_condition, gold_full=gold_dict, verbose=True, log_file=log_base_file)
-            log_base_file.close()
             log_base_file = open(res_dir_cond + "log_base_an_"+test_condition, 'w')
             log_base_file.write("NET:%s, DEPTH:%i\n" % (target_lang, 1))
             tvd_base_an, rbd_base_an, jac_base_an, apk_base_an, apk_base_10_an = monoling[target_lang].test_network(test_list, 1, test_condition, gold_full=gold_dict, verbose=True, log_file=log_base_file)
+            log_base_file.close()
+            log_base_file = open(res_dir_cond + "log_base_sa_"+test_condition, 'w')
+            log_base_file.write("NET:%s, DEPTH:%i\n" % (target_lang, parameters["baseline depth"]))
+            tvd_base_sa, rbd_base_sa, jac_base_sa, apk_base_sa, apk_base_10_sa = monoling[target_lang].test_network(test_list, parameters["baseline depth"], test_condition, gold_full=gold_dict, verbose=True, log_file=log_base_file)
             log_base_file.close()
         else:
             tvd_base_sa = rbd_base_sa = jac_base_sa = apk_base_sa = apk_base_10_sa = [0] * len(test_list)
@@ -98,17 +98,17 @@ def main():
             log_per_word = open(log_per_word_fn, 'a')
         else:
             log_per_word = open(log_per_word_fn, 'w')
-            log_per_word.write("L1_assoc\tL2_assoc\tTE\torth\tasymm\t")
+            log_per_word.write("L1_assoc\tL2_assoc\tTE\torth\tsynt\tasymm\t")
             for w in test_list:
                 log_per_word.write("%s (tvd)\t%s (rbd)\t%s (jac)\t%s (apk_k)\t%s (apk_10)\t" % (w, w, w, w, w))
             log_per_word.write("\n")
             log_per_word.flush()
 
-            log_per_word.write("%s\t%s\t%s\t%s\t%s\t" % ("base-an", "base-an", "base-an", "base-sa", "base-an"))
+            log_per_word.write("%s\t%s\t%s\t%s\t%s\t%s\t" % ("base-an", "base-an", "base-an", "base-sa", "base-an", "base-an"))
             for idx in range(len(test_list)):
                 log_per_word.write("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t" % (tvd_base_an[idx], rbd_base_an[idx], jac_base_an[idx], apk_base_an[idx], apk_base_10_an[idx]))
             log_per_word.write("\n")
-            log_per_word.write("%s\t%s\t%s\t%s\t%s\t" % ("base-sa", "base-sa", "base-sa", "base-sa", "base-sa"))
+            log_per_word.write("%s\t%s\t%s\t%s\t%s\t%s\t" % ("base-sa", "base-sa", "base-sa", "base-sa", "base-sa", "base-sa"))
             for idx in range(len(test_list)):
                 log_per_word.write("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t" % (tvd_base_sa[idx], rbd_base_sa[idx], jac_base_sa[idx], apk_base_sa[idx], apk_base_10_sa[idx]))
             log_per_word.write("\n")
@@ -117,15 +117,15 @@ def main():
         meta_args = [mode, test_list, test_condition, fn_nl, fn_en, en_nl_dic, tvd_base_an, rbd_base_an, jac_base_an, apk_base_an, apk_base_10_an, tvd_base_sa, rbd_base_sa, jac_base_sa, apk_base_sa, apk_base_10_sa, gold_dict, res_dir_cond]
 
         par = [ [L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio]
-                for L1_assoc_coeff in [1, 2, 5, 10, 15, 20, 25, 30]
-                for L2_assoc_coeff in [0, 1, 2, 5, 10, 20]
-                for TE_coeff in [1, 2, 5, 10, 20]
-                for orth_coeff in [0, 1, 2, 5, 10, 20]
-                for synt_coeff in [0, 1, 2, 5, 10, 20]
+                for L1_assoc_coeff in [5, 10, 15, 20, 25, 30]
+                for L2_assoc_coeff in [1, 2, 5, 10]
+                for TE_coeff in [1, 2, 5, 10]
+                for orth_coeff in [0, 1, 2, 5]
+                for synt_coeff in [0, 1, 2, 5]
                 for asymm_ratio in [1]
-                # if L1_assoc_coeff==1 or not (L1_assoc_coeff==TE_coeff==L2_assoc_coeff==orth_coeff) and L1_assoc_coeff >= L2_assoc_coeff
+                # if (L1_assoc_coeff >= L2_assoc_coeff and L1_assoc_coeff >= TE_coeff and L1_assoc_coeff >= orth_coeff and L1_assoc_coeff >= synt_coeff)
                 # for (L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio) in [[5,2,2,0,1],[20,5,5,0,1],[5,1,1,0,1],[2,2,1,0,1]]
-                # for (L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio) in [[5,10,5,5,1]]
+                # for (L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio) in [[14,1,2,2,0,1]]
                 ]
 
         args = [meta_args + par_set for par_set in par]
@@ -135,7 +135,7 @@ def main():
 
         pool = Pool(workers)
         for L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio, tvd_m, rbd_m, jac_m, apk_m, apk_m_10 in pool.imap(test_model, args):
-            log_per_word.write("%d\t%d\t%d\t%d\t%d\t" % (L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio))
+            log_per_word.write("%d\t%d\t%d\t%d\t%d\t%d\t" % (L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio))
             for idx in range(len(test_list)):
                 log_per_word.write("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t" % (tvd_m[idx], rbd_m[idx], jac_m[idx], apk_m[idx], apk_m_10[idx]))
             log_per_word.write("\n")

@@ -1,9 +1,5 @@
 import os
 import re
-from dutch import Graphnx
-import json
-import pickle
-import numpy as np
 import csv
 
 def nld_eng_parser():
@@ -16,7 +12,7 @@ def nld_eng_parser():
     
     '''
     
-    direct = '/Users/amirardalankalantaridehgahi/Desktop/school/stevensonRA/dict'  #change it
+    direct = './freedict/'  #change it
     fil = open(os.path.join(direct, "nld-eng.tei"), "r")
 
     tei = fil.readlines()
@@ -67,7 +63,7 @@ def eng_nld_parser():
     
     '''
     
-    direct = '/Users/amirardalankalantaridehgahi/Desktop/school/stevensonRA/dict'  #change it
+    direct = './freedict'  #change it
     fil = open(os.path.join(direct, "eng-nld.tei"), "r")
 
     tei = fil.readlines()
@@ -112,13 +108,13 @@ def eng_nld_parser():
 
 def cc_parser():
     dikt = {}
-    f = open("dict_cc_en_nl.tsv")
+    f = open("./dict.cc/dict_cc_en_nl.tsv")
     l = f.readlines()
     for i in l:
         line = i.split('\t')
         if line[0] not in dikt:
             dikt[line[0]] = []
-        dikt[line[0]].append(line[1].strip('\n'))
+        dikt[line[0]].append(line[1].strip())
     return dikt
 
 
@@ -154,13 +150,9 @@ def full_dict():
     eng = eng_nld_parser()
     
     final = {}
-    raw_input()
     final = parser_helper(final,cc)
-    raw_input()
     final = parser_helper(final,rev)
-    raw_input()
     final = parser_helper(final, eng)
-    raw_input()
     return final
     
     
@@ -168,7 +160,7 @@ def full_dict():
 
 def csvwriter():
     d = full_dict()
-    with open('dictionary.csv', 'w') as csvfile:
+    with open('./dictionary_new.csv', 'w') as csvfile:
         fieldnames = ['English', 'Dutch']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 

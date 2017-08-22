@@ -348,6 +348,7 @@ class LexNetBi(LexNet):
         self.cogn_threshold = parameters["cognate threshold"]
         self.use_freq = parameters["use frequencies"]
         self.orth_edge_type = parameters["orth edge type"]
+        self.freq_mode = parameters["frequency mode"]
         self.G = self.construct_bilingual_graph(fn_l1, fn_l2, l2_l1_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio, mode)
 
     def get_assoc_edges(self, fn, lang, assoc_coeff):
@@ -359,14 +360,14 @@ class LexNetBi(LexNet):
         # First response only:
         for i in range(1, 2):
             edges.update(zip(df['cue'], df['asso' + str(i)]))
-        weighted_edges = [(e[0][0] + l, e[0][1] + l, e[1]) for e in edges.items() if e[0][1] not in
-                             extras["noise list"] and e[1] > self.min_freq]
+        weighted_edges = {(e[0][0] + l, e[0][1] + l): e[1] for e in edges.items() if e[0][1] not in
+                             extras["noise list"] and e[1] > self.min_freq}
         # vertices = [word + extras["language mapping"][lang] for word in
         #             set.union(set(df['cue']), set(df['asso1']))]
         vertices = [word for word in
-                    set.union(set([i[0] for i in weighted_edges]), (set([i[1] for i in weighted_edges])))]
+                    set.union(set([i[0] for i in weighted_edges.keys()]), (set([i[1] for i in weighted_edges.keys()])))]
         #set.union(set(df['cue']), set(df['asso1']), set(df['asso2']), set(df['asso3']))]
-        weighted_edges = utils.normalize_tuple_list(weighted_edges, assoc_coeff)
+        weighted_edges = utils.normalize_tuple_dict(weighted_edges, assoc_coeff)
         return weighted_edges, vertices
 
     def get_orth_edges(self, vertices_en, vertices_nl, orth_coeff, mode, asymm_ratio):
@@ -386,10 +387,9 @@ class LexNetBi(LexNet):
         return lev_edges
 
     def get_synt_edges(self, vertices_en, synt_coeff):
-        synt_weights = utils.syntLoader("./coca/ngrams.lemmas", vertices_en)
-        #synt_edges = {k: v for k, v in synt_weights.items() if k[0] in vertices_en and k[1] in vertices_en}
-        synt_weights_inverse = {(tpl[1], tpl[0]): w for tpl,w in synt_weights.items()}
-        synt_weights.update(synt_weights_inverse)
+        synt_weights = utils.syntLoader("./coca/ngrams.lemmas.cond.prob.filtered.csv", vertices_en)
+        #synt_weights_inverse = {(tpl[1], tpl[0]): w for tpl,w in synt_weights.items()}
+        #synt_weights.update(synt_weights_inverse)
         synt_edges = utils.normalize_tuple_dict(synt_weights, synt_coeff)
 
         return synt_edges
@@ -397,10 +397,16 @@ class LexNetBi(LexNet):
     def get_TE_edges(self, vertices_en, vertices_nl, en_nl_dic, TE_coeff, asymm_ratio):
         TE_all = [(en,nl) for en, nls in en_nl_dic.items() for nl in nls]
         if self.use_freq:
-            freqs_nl = utils.read_frequencies("./frequencies/SUBTLEX-NL.txt", ":NL")
-            freqs_en = utils.read_frequencies("./frequencies/en_google_ngrams", ":EN")
-            TE_edges_en_nl = {tpl: (freqs_nl.get(tpl[1]) or 1) for tpl in TE_all if tpl[0] in vertices_en and tpl[1] in vertices_nl}
-            TE_edges_nl_en = {(tpl[1], tpl[0]): (freqs_en.get(tpl[0]) or 1) for tpl in TE_edges_en_nl.keys()}
+            if self.freq_mode == "unigrams":
+                freqs_nl = utils.read_frequencies("./frequencies/SUBTLEX-NL.txt", ":NL")
+                freqs_en = utils.read_frequencies("./frequencies/en_google_ngrams", ":EN")
+                TE_edges_en_nl = {tpl: (freqs_nl.get(tpl[1]) or 1) for tpl in TE_all if tpl[0] in vertices_en and tpl[1] in vertices_nl}
+                TE_edges_nl_en = {(tpl[1], tpl[0]): (freqs_en.get(tpl[0]) or 1) for tpl in TE_edges_en_nl.keys()}
+            else:
+                freqs = utils.read_alignment_frequencies("./alignment/en-nl.refined.dic.lemmas.csv")
+                TE_edges_en_nl = {tpl: (freqs.get(tpl) or 1) for tpl in TE_all if
+                                  tpl[0] in vertices_en and tpl[1] in vertices_nl}
+                TE_edges_nl_en = {(tpl[1], tpl[0]): w for tpl,w in TE_edges_en_nl.items()}
         else:
             TE_edges_en_nl = {tpl: 1 for tpl in TE_all if tpl[0] in vertices_en and tpl[1] in vertices_nl}
             TE_edges_nl_en = {(tpl[1], tpl[0]): 1 for tpl in TE_edges_en_nl.keys()}
@@ -412,26 +418,33 @@ class LexNetBi(LexNet):
 
     def construct_bilingual_graph(self, fn_nl, fn_en, en_nl_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio, mode):
         # Constructs a bilingual graph with various edges and pickles it. If a pickled file found, loads it instead.
-        fn = "./biling_graph/orth_"+str(self.orth_edge_type)+"_freq_"+str(self.use_freq)+"/biling_dump_L1_assoc_" + str(L1_assoc_coeff) + "_L2_assoc_" + str(L2_assoc_coeff) + "_TE_" + str(TE_coeff) + "_orth_" + str(orth_coeff) + "_asymm_" + str(asymm_ratio)
-        if os.path.isfile(fn+"banana"):
+        fn = parameters["edge directory"]+"orth_" + str(self.orth_edge_type)+\
+             "_freq_" + str(self.use_freq) + \
+             "/biling_dump_L1_assoc_" + str(L1_assoc_coeff) + \
+             "_L2_assoc_" + str(L2_assoc_coeff) + \
+             "_TE_" + str(TE_coeff) + \
+             "_orth_" + str(orth_coeff) + \
+             "_synt_" + str(synt_coeff) + \
+             "_asymm_" + str(asymm_ratio)
+        if os.path.isfile(fn):
             #biling = read(fn, format="pickle")
             biling = read(fn, format="ncol")
         else:
 
-            edges_nl, vertices_nl = self.get_assoc_edges(fn_nl, "D", L1_assoc_coeff)
-            # edges_en, vertices_en = self.get_assoc_edges(fn_en + "_plain", "E")
-            edges_en, vertices_en = self.get_assoc_edges(fn_en, "E", L2_assoc_coeff)
+            edges_assoc_nl, vertices_nl = self.get_assoc_edges(fn_nl, "D", L1_assoc_coeff)
+            edges_nl = [(k[0],k[1],v) for k,v in edges_assoc_nl.items()]
 
-            edges_en_synt = self.get_synt_edges(vertices_en, synt_coeff)
-            edges_en = [(k[0], k[1], v) for k, v in (Counter(edges_en) + Counter(edges_en_synt)).items()]
-            
+            edges_assoc_en, vertices_en = self.get_assoc_edges(fn_en, "E", L2_assoc_coeff)
+            edges_synt_en = self.get_synt_edges(vertices_en, synt_coeff)
+            edges_en = [(k[0], k[1], v) for k, v in (Counter(edges_assoc_en) + Counter(edges_synt_en)).items()]
+
             orth_edges = self.get_orth_edges(vertices_en, vertices_nl, orth_coeff, mode, asymm_ratio)
             TE_edges = self.get_TE_edges(vertices_en, vertices_nl, en_nl_dic, TE_coeff, asymm_ratio)
             crossling_edges = [(k[0], k[1], v) for k, v in (Counter(TE_edges) + Counter(orth_edges)).items()]
 
             edges = []
-            edges.extend(edges_en)
             edges.extend(edges_nl)
+            edges.extend(edges_en)
             edges.extend(crossling_edges)
             edges = utils.normalize_tuple_list(edges, 1)
 
@@ -439,5 +452,5 @@ class LexNetBi(LexNet):
             biling.add_vertices(vertices_en)
             biling.add_vertices(vertices_nl)
             #biling.write_pickle(fn)
-            # biling.write_ncol(fn, names="name")
+            biling.write_ncol(fn, names="name")
         return (biling)
