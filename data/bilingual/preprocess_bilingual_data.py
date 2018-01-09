@@ -1,5 +1,4 @@
 import os
-import csv
 import frog
 from nltk import pos_tag
 from nltk import WordNetLemmatizer
@@ -14,7 +13,7 @@ def wn_lemmatizer(word):
     mapping = {'N': wn.NOUN, 'V': wn.VERB, 'R': wn.ADV,'J': wn.ADJ}
     tag_wn = mapping.get(tag[0], wn.NOUN)
     lemma = lemmatizer.lemmatize(word, tag_wn)
-    return lemma.encode('ascii', 'ignore').decode('ascii')
+    return lemma
 
 def preprocess_word(w):
     # An auxiliary function to clean test files.
@@ -48,12 +47,11 @@ def lemmatize_word(word, lang):
     return word
 
 def read_test_file(fn, spell_dict, log_fn):
-    # An auxiliary function that reads a single test file.
 
     if os.path.exists(log_fn):
         append_write = 'a'
     else:
-        append_write = 'w'  # make a new file if not
+        append_write = 'w'
     log = open(log_fn, append_write)
 
     conditions = fn.split("/")[-1].split('.')[0].split('-')
@@ -90,15 +88,15 @@ def read_test_file(fn, spell_dict, log_fn):
     log.close()
 
 def main():
-    with open('./vanhell/spelling_correction', 'r') as spelling:
+    with open('./spelling_correction', 'r') as spelling:
         reader = csv.reader(spelling, delimiter="\t")
         spell_dict = {rows[0]: rows[1] for rows in reader}
 
-    log_fn = "./vanhell/log_lemmas"
-    read_test_file("./vanhell/EE1-ED2-EE3.csv", spell_dict, log_fn)
-    read_test_file("./vanhell/DD1-DE2-DD3.csv", spell_dict, log_fn)
-    read_test_file("./vanhell/DE1-DD2.csv", spell_dict, log_fn)
-    read_test_file("./vanhell/ED1-EE2.csv", spell_dict, log_fn)
+    log_fn = "./log_lemmas"
+    read_test_file("./EE1-ED2-EE3.csv", spell_dict, log_fn)
+    read_test_file("./DD1-DE2-DD3.csv", spell_dict, log_fn)
+    read_test_file("./DE1-DD2.csv", spell_dict, log_fn)
+    read_test_file("./ED1-EE2.csv", spell_dict, log_fn)
 
 
 main()
