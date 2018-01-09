@@ -26,4 +26,5 @@
 # https://smallworldofwords.org/en/project/research
 # Place associationData.csv in ./data/norms_nl
 #
-# After obtaining all data, run main.py.
+# After obtaining all data, run main.py, preferably with Frog installed:
+# http://languagemachines.github.io/frog/
