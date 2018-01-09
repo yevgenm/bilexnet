@@ -1,28 +1,18 @@
+from nltk.corpus import wordnet as wn
+
 parameters = {
-    "baseline depth": 3,
-    "model depth": 3,
-    #"frequency mode": "alignment",
-    "frequency mode": "unigrams",
-    "edge directory": "./biling_graph/unigram/",
-    "orthographic threshold": 0.8,
     "cognate threshold": 0.5,
-    "activation decay": 0.7,
-    "jaccard k": 3,
-    "apk k": 3,
-    "retrieval algorithm": "spreading",
-    "number of walks": 149,
+    "cut-off threshold": 0.01,
+    "edge directory": "./output/edge_files",
+    "evaluation n value": 3,
     "frequency threshold": 1,
-    "return allowed": False,
-    "use syntagmatic edges": True,
-    # "use frequencies": False,
-    "use frequencies": True,
-    # "orth edge type": "orth",
-    "orth edge type": "cogn",
-    "L1 to L2 reliance ratio": [0.75, 0.25],
+    "spreading depth": 3,
+    "orthographic threshold": 0.75,
 }
 
 
-extras = {
-    "language mapping": {'E': ':EN', 'D': ':NL'},
-    "noise list": ['x', '', None]
+constants = {
+    "language mapping": {'E': ':en', 'D': ':nl'},
+    "noise list": ['x', '', None],
+    "wn mapping": {'N': wn.NOUN, 'V': wn.VERB, 'R': wn.ADV, 'J': wn.ADJ}
 }

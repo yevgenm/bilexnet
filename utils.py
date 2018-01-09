@@ -1,59 +1,96 @@
-# https://ragrawal.wordpress.com/2013/01/18/comparing-ranked-list/
-# https://github.com/ragrawal/measures/blob/master/measures/rankedlist/RBO.py
-import numpy as np
 import csv
 import math
-import operator
-import pandas
+import ml_metrics as metrics
+import numpy as np
+from parameters import *
+from scipy.stats import wilcoxon
+
+def compute_differences(d1, d2, test_words):
+    ups_max = []
+    ups_n = []
+    rhos_max = []
+    rhos_n = []
+    n_var = parameters["evaluation n value"]
+    for w in sorted(test_words):
+        n_max = min(len(d1[w]), len(d2[w]))
+        tw1_sorted = sorted(d1[w].items(), key=lambda x: (-x[1], x[0]))
+        tw2_sorted = sorted(d2[w].items(), key=lambda x: (-x[1], x[0]))
+        lw1 = [e[0] for e in tw1_sorted]
+        lw2 = [e[0] for e in tw2_sorted]
+        dw1_max = normalize_dict(dict(tw1_sorted[:n_max]))
+        dw2_max = normalize_dict(dict(tw2_sorted[:n_max]))
+        dw1_n = normalize_dict(dict(tw1_sorted[:n_var]))
+        dw2_n = normalize_dict(dict(tw2_sorted[:n_var]))
+        upsilon_max = 0.5 * sum(abs((dw1_max.get(resp) or 0) - (dw2_max.get(resp) or 0)) for resp in sorted(set(dw1_max) | set(dw2_max)))
+        upsilon_n = 0.5 * sum(abs((dw1_n.get(resp) or 0) - (dw2_n.get(resp) or 0)) for resp in sorted(set(dw1_n) | set(dw2_n)))
+
+        sl, ll = sorted([(len(lw1), lw1), (len(lw2), lw2)])
+        s, S = sl
+        l, L = ll
+        rho_max = 1 - metrics.apk(S, L, s)
+        rho_n = 1 - metrics.apk(S[:n_var], L, n_var)
+
+        # ups_max.append((w, upsilon_max))
+        # ups_n.append((w, upsilon_n))
+        # rhos_max.append((w, rho_max))
+        # rhos_n.append((w, rho_n))
+        ups_max.append(upsilon_max)
+        ups_n.append(upsilon_n)
+        rhos_max.append(rho_max)
+        rhos_n.append(rho_n)
+    return ups_max, ups_n, rhos_max, rhos_n
 
 
+def print_difference_stats(ups_max_1, ups_n_1, rhos_max_1, rhos_n_1, ups_max_2, ups_n_2, rhos_max_2, rhos_n_2, f):
 
-def read_frequencies(fn, lang):
-    # Reads the file with Dutch word frequencies.
-    freq_dict = {}
+    f.write("RHO-3\n")
+    #f.write("\tMEANS: within-group: %.3f, between-group, %.3f\n" % (np.mean([i[1] for i in rhos_n_1]), np.mean([i[1] for i in rhos_n_2])))
+    f.write("\tMEANS: within-group: %.3f, between-group, %.3f\n" % (np.mean(rhos_n_1), np.mean(rhos_n_2)))
+    #wilcoxon_result = wilcoxon([i[1] for i in rhos_n_1], [i[1] for i in rhos_n_2])
+    wilcoxon_result = wilcoxon(rhos_n_1, rhos_n_2)
+    f.write("\tWILCOXON SIGNED RANK TEST: T = %.3f, p = %.3f\n" % (wilcoxon_result[0], wilcoxon_result[1]))
+
+    f.write("UPSILON-3\n")
+    #f.write("\tMEANS: within-group: %.3f, between-group, %.3f\n" % (np.mean([i[1] for i in ups_n_1]), np.mean([i[1] for i in ups_n_2])))
+    f.write("\tMEANS: within-group: %.3f, between-group, %.3f\n" % (np.mean(ups_n_1), np.mean(ups_n_2)))
+    #wilcoxon_result = wilcoxon([i[1] for i in ups_n_1], [i[1] for i in ups_n_2])
+    wilcoxon_result = wilcoxon(ups_n_1, ups_n_2)
+    f.write("\tWILCOXON SIGNED RANK TEST: T = %.3f, p = %.3f\n" % (wilcoxon_result[0], wilcoxon_result[1]))
+
+    f.write("RHO-MAX\n")
+    #f.write("\tMEANS: within-group: %.3f, between-group, %.3f\n" % (np.mean([i[1] for i in rhos_max_1]), np.mean([i[1] for i in rhos_max_2])))
+    f.write("\tMEANS: within-group: %.3f, between-group, %.3f\n" % (np.mean(rhos_max_1), np.mean(rhos_max_2)))
+    #wilcoxon_result = wilcoxon([i[1] for i in rhos_max_1], [i[1] for i in rhos_max_2])
+    wilcoxon_result = wilcoxon(rhos_max_1, rhos_max_2)
+    f.write("\tWILCOXON SIGNED RANK TEST: T = %.3f, p = %.3f\n" % (wilcoxon_result[0], wilcoxon_result[1]))
+
+    f.write("UPSILON-MAX\n")
+    #f.write("\tMEANS: within-group: %.3f, between-group, %.3f\n" % (np.mean([i[1] for i in ups_max_1]), np.mean([i[1] for i in ups_max_2])))
+    f.write("\tMEANS: within-group: %.3f, between-group, %.3f\n" % (np.mean(ups_max_1), np.mean(ups_max_2)))
+    #wilcoxon_result = wilcoxon([i[1] for i in ups_max_1], [i[1] for i in ups_max_2])
+    wilcoxon_result = wilcoxon(ups_max_1, ups_max_2)
+    f.write("\tWILCOXON SIGNED RANK TEST: T = %.3f, p = %.3f\n" % (wilcoxon_result[0], wilcoxon_result[1]))
+
+
+def read_alignments(fn):
+    freq = {"en": {}, "nl": {}}
     with open(fn) as f:
-        reader = csv.reader(f, skipinitialspace=True, quotechar=None, delimiter="\t")
+        reader = csv.reader(f, skipinitialspace=True, quotechar=None, delimiter=",")
         next(reader)
         for row in reader:
-            word = row[0].lower()+lang
-            freq = int(row[1])
-            if word not in freq_dict: freq_dict[word] = freq
-            freq_dict[word] += freq
-    return freq_dict
-
-
-
-def read_alignment_frequencies(fn):
-   
-
-    freq = {}
-    with open(fn) as f:
-        reader = csv.reader(f, skipinitialspace=True, quotechar=None, delimiter="\t")
-        for row in reader:
-            words = row[0].strip().split(',')
-            if len(words)==3:
-                eng = words[1].strip().lower()+":EN"
-                dutch = words[2].strip().lower()+":NL"
-                freq[(eng, dutch)] = int(words[0])
-                
+            eng = row[0].strip().lower().strip("-")
+            dut = row[1].strip().lower().strip("-")
+            freq_ed = float(row[2].strip().strip("-"))
+            freq_de = float(row[3].strip().strip("-"))
+            if eng != "" and dut != "":
+                eng = eng + ":en"
+                dut = dut + ":nl"
+                if freq_ed != 0:
+                    freq["en"][(eng, dut)] = freq_ed
+                if freq_de != 0:
+                    freq["nl"][(dut, eng)] = freq_de
     return freq
-            
-    
-    
-    
-    
-def read_dict(fn):
-    # Reads an English-Dutch dictionary from CSV.
-    dic = {}
-    with open(fn) as fin:
-        reader = csv.reader(fin, skipinitialspace=True, quotechar=None)
-        next(reader)
-        for row in reader:
-            source = row[0]+":EN"
-            transl = row[1]+":NL"
-            if source not in dic: dic[source] = []
-            dic[source].append(transl)
-    return (dic)
+
 
 def normalize_tuple_list(l, weight):
     # Given a list of tuples (word1, word2, weight), normalizes all weights, so that all edges outgoing from each word add up to the value of weight.
@@ -71,6 +108,7 @@ def normalize_tuple_list(l, weight):
         l[idx] = (w1, w2, weight*c/float(connections[w1]))
     return l
 
+
 def normalize_tuple_dict(d, weight):
     # Given a dictionary {(word1, word2): weight}, normalizes all weights, so that all edges outgoing from each word add up to the value of weight.
     if weight == 0:
@@ -81,21 +119,20 @@ def normalize_tuple_dict(d, weight):
             connections[w1] = 0
         connections[w1] += c
     for (w1, w2), c in sorted(d.items()):
-        d[(w1, w2)] = weight*c/float(connections[w1])
+        d[(w1, w2)] = weight * c / float(connections[w1])
     return d
+
 
 def normalize_dict(d, target=1.0):
     # Normalizes dictionary values to 1 (or another target value).
     raw = math.fsum(d.values())
-    if raw == 0: return {}
+    if raw == 0:
+        return {}
     factor = target / raw
     for k in d:
-        d[k] = d[k]*factor
-    #key_for_max = max(sorted(d.items()), key=operator.itemgetter(1))[0]
-    #diff = 1.0 - math.fsum(d.values())
-    #print("discrepancy = " + str(diff))
-    #d[key_for_max] += diff
+        d[k] *= factor
     return d
+
 
 def invert_dict(d):
     # Inverts a dictionary of {string:list} pairs.
@@ -104,88 +141,3 @@ def invert_dict(d):
         for v in d[k]:
             newdict.setdefault(v, []).append(k)
     return newdict
-
-def filter_test_list(G, test_list):
-    # Filters out test words that are absent in the big graph.
-    test_list_cleaned = [w for w in test_list if w in G.vs['name']]
-    test_list_cleaned = [w for w in test_list_cleaned if G.incident(w)]
-    return(test_list_cleaned)
-
-def levLoader(theta, fn):
-    # Reads the files with orthographic similarities and returns a dictionary {(word1, word2): sim}
-    fil = open(fn ,"r")
-    l = fil.readlines()
-    l = l[1:]
-    d = {}
-    for lin in l:
-        w = lin.split(",")
-        #print(w)
-        sim = float(w[2].strip('\n').strip('\r'))
-        if sim >= theta:
-            d[(w[0]+":EN", w[1]+":NL")] = sim
-    return d
-
-def syntLoader(fn, words):
-    # Reads the files with syntagmatic cooccurence information and returns a dictionary {(word1, word2): sim}
-    df = pandas.read_csv(fn, sep=",", na_values="", keep_default_na=False)
-    df["w1"] = df["w1"] + ":EN"
-    df["w2"] = df["w2"] + ":EN"
-    df = df[(df['w1'].isin(words)) & (df['w2'].isin(words))]
-    d = df.set_index(["w1","w2"]).to_dict()["score"]
-    return d
-
-def get_rbo(l1, l2, p=0.9):
-    """
-        Calculates Ranked Biased Overlap (RBO) score.
-        l1 -- Ranked List 1
-        l2 -- Ranked List 2
-    """
-    if l1 == None: l1 = []
-    if l2 == None: l2 = []
-
-    sl, ll = sorted([(len(l1), l1), (len(l2), l2)])
-    s, S = sl
-    l, L = ll
-    if s == 0: return 0
-
-    # Calculate the overlaps at ranks 1 through l
-    # (the longer of the two lists)
-    ss = set([])  # contains elements from the smaller list till depth i
-    ls = set([])  # contains elements from the longer list till depth i
-    x_d = {0: 0}
-    sum1 = 0.0
-    for i in range(l):
-        x = L[i]
-        y = S[i] if i < s else None
-        d = i + 1
-
-        # if two elements are same then
-        # we don't need to add to either of the set
-        if x == y:
-            x_d[d] = x_d[d - 1] + 1.0
-        # else add items to respective list
-        # and calculate overlap
-        else:
-            ls.add(x)
-            if y != None: ss.add(y)
-            x_d[d] = x_d[d - 1] + (1.0 if x in ss else 0.0) + (1.0 if y in ls else 0.0)
-        # calculate average overlap
-        sum1 += x_d[d] / d * pow(p, d)
-
-    sum2 = 0.0
-    for i in range(l - s):
-        d = s + i + 1
-        sum2 += x_d[d] * (d - s) / (d * s) * pow(p, d)
-
-    sum3 = ((x_d[l] - x_d[s]) / l + x_d[s] / s) * pow(p, l)
-
-    # Equation 32
-    rbo_ext = (1 - p) / p * (sum1 + sum2) + sum3
-
-    return rbo_ext
-
-def get_rbd(l1, l2):
-    return(1-get_rbo(l1,l2))
-
-
-

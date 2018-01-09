@@ -1,151 +1,145 @@
-from networks_igraph import *
+import os
+import sys
 from multiprocessing import Pool
+from models import *
 from parameters import *
+import preprocessing as prep
+import utils
 
-def test_model(args):
+def evaluate_model(args):
+    test_cues, resp_lang, vertices_nl, vertices_en, norms_nl, norms_en, norms_bi, en_nl_dic, alignments, cognates, orth_sims_en, synt_coocs_en,\
+    ups_max_base_an, ups_n_base_an, rhos_max_base_an, rhos_n_base_an, ups_max_base_sa, ups_n_base_sa, rhos_max_base_sa, rhos_n_base_sa, output_dir, \
+    model_type, k_da, k_ea, k_te, k_cg, k_or, k_sy = args
 
-    mode, test_list, test_condition, fn_nl, fn_en, en_nl_dic, tvd_base_an, rbd_base_an, jac_base_an, apk_base_an, apk_base_10_an, tvd_base_sa, rbd_base_sa, jac_base_sa, apk_base_sa, apk_base_10_sa, gold_dict, res_dir_cond, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio = args
-    log_fn = res_dir_cond + "log_" + test_condition + "_L1_assoc_" + str(L1_assoc_coeff) + "_L2_assoc_" + str(
-        L2_assoc_coeff) + "_TE_" + str(TE_coeff) + "_orth_" + str(orth_coeff) + "_synt_" + str(synt_coeff) + "_asymm_" + str(asymm_ratio)
+    log_fn = "%s/log_%s_type_%s_da_%s_ea_%s_te_%s_cg_%s_or_%s_sy_%s" % (output_dir, resp_lang, model_type, str(k_da), str(k_ea), str(k_te), str(k_cg), str(k_or), str(k_sy))
     log_file = open(log_fn, "w")
-    biling = LexNetBi(fn_nl, fn_en, en_nl_dic, L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio, mode)
+    model_bi = LexNetBi(vertices_nl, vertices_en, norms_nl, norms_en, orth_sims_en, synt_coocs_en, en_nl_dic, cognates, alignments, k_da, k_ea, k_te, k_cg, k_or, k_sy, model_type)
+    log_file.write("MODEL:%s-%s, K_DA: %i, K_EA: %i, K_TE:%i, K_CG:%i, K_OR: %i, K_SY:%i\n" % ("bi", model_type, k_da, k_ea, k_te, k_cg, k_or, k_sy))
 
-    if test_condition == "ED":
-        dict_for_filtering = en_nl_dic
-    elif test_condition == "DE":
-        dict_for_filtering = utils.invert_dict(en_nl_dic)
-    else:
-        dict_for_filtering = None
-
-    log_file.write("NET:%s, DEPTH:%i, L1 ASSOC: %i, L2 ASSOC: %i, TE:%i, ORTH:%i, SYNT:%i, ASYMM: %i\n" % ("bi", parameters[
-        "model depth"], L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio))
-    tvd_m, rbd_m, jac_m, apk_m, apk_m_10 = biling.test_network(test_list, parameters["model depth"], test_condition, translation_dict=dict_for_filtering, gold_full=gold_dict, verbose=True, log_file=log_file)
-
-    log_file.write("TVD t-test vs. AN: T=%.2f, p=%.3f\n" % (ttest_rel(tvd_base_an, tvd_m)[0], ttest_rel(tvd_base_an, tvd_m)[1]))
-    log_file.write("RBD t-test vs. AN: T=%.2f, p=%.3f\n" % (ttest_rel(rbd_base_an, rbd_m)[0], ttest_rel(rbd_base_an, rbd_m)[1]))
-    log_file.write("JAC t-test vs. AN: T=%.2f, p=%.3f\n" % (ttest_rel(jac_base_an, jac_m)[0], ttest_rel(jac_base_an, jac_m)[1]))
-    log_file.write("APK(k) t-test vs. AN: T=%.2f, p=%.3f\n" % (ttest_rel(apk_base_an, apk_m)[0], ttest_rel(apk_base_an, apk_m)[1]))
-    log_file.write("APK(10) t-test vs. AN: T=%.2f, p=%.3f\n" % (ttest_rel(apk_base_10_an, apk_m_10)[0], ttest_rel(apk_base_10_an, apk_m_10)[1]))
-
-    log_file.write("TVD t-test vs. SA: T=%.2f, p=%.3f\n" % (ttest_rel(tvd_base_sa, tvd_m)[0], ttest_rel(tvd_base_sa, tvd_m)[1]))
-    log_file.write("RBD t-test vs. SA: T=%.2f, p=%.3f\n" % (ttest_rel(rbd_base_sa, rbd_m)[0], ttest_rel(rbd_base_sa, rbd_m)[1]))
-    log_file.write("JAC t-test vs. SA: T=%.2f, p=%.3f\n" % (ttest_rel(jac_base_sa, jac_m)[0], ttest_rel(jac_base_sa, jac_m)[1]))
-    log_file.write("APK(k) t-test vs. SA: T=%.2f, p=%.3f\n" % (ttest_rel(apk_base_sa, apk_m)[0], ttest_rel(apk_base_sa, apk_m)[1]))
-    log_file.write("APK(10) t-test vs. SA: T=%.2f, p=%.3f\n" % (ttest_rel(apk_base_10_sa, apk_m_10)[0], ttest_rel(apk_base_10_sa, apk_m_10)[1]))
-
+    ups_max, ups_n, rhos_max, rhos_n = model_bi.test_network(test_cues, parameters["spreading depth"], resp_lang, norms_bi, True, log_file)
     log_file.close()
 
-    return(L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio, tvd_m, rbd_m, jac_m, apk_m, apk_m_10)
+    return model_type, k_da, k_ea, k_te, k_cg, k_or, k_sy, ups_max, ups_n, rhos_max, rhos_n
 
 
-def main():
+def read_all_data():
+    prep.activate_lemmatizers()
+    norms_nl = prep.read_norm_data("./data/norms_preprocessed_nl.csv", "nl")
+    norms_en = prep.read_norm_data("./data/norms_preprocessed_en.csv", "en")
+    vertices_nl = list(set(list(norms_nl) + [resp for cue in norms_nl for resp in norms_nl[cue]]))
+    vertices_en = list(set(list(norms_en) + [resp for cue in norms_en for resp in norms_en[cue]]))
+    words_nl = [w[:-3] for w in vertices_nl]
+    words_en = [w[:-3] for w in vertices_en]
+    en_nl_dic = prep.read_dict("./data/en_nl_dictionary.csv", words_nl, words_en)
+    alignments = prep.read_alignments("./data/word_alignments.csv", words_nl, words_en)
+    cognates = prep.read_cognates("./data/cognates.csv", en_nl_dic, words_nl, words_en)
+    norms_bi_nl = prep.read_bilingual_data("nl-nl")
+    norms_bi_en = prep.read_bilingual_data("en-en")
+    norms_bi = {"en-en": norms_bi_en, "nl-nl": norms_bi_nl}
+    orth_sims_en = prep.read_orthography("./data/orth_sim_en.csv", words_en)
+    synt_coocs_en = prep.read_cooccurences("./data/synt_coocc_en.csv", words_en)
+    return norms_nl, norms_en, vertices_nl, vertices_en, en_nl_dic, alignments, cognates, norms_bi, orth_sims_en, synt_coocs_en
 
-    res_dir = sys.argv[1]
-    if res_dir[-1] != "/":
-        res_dir += "/"
-    workers = int(sys.argv[2])
 
-    if not os.path.exists(res_dir):
-        os.makedirs(res_dir)
+def run_group_comparisons(norms_nl, norms_en, norms_bi_nl, norms_bi_en, log_fn):
 
-    fn_en = "./SF_norms/sothflorida_complete.csv"
-    fn_nl = "./Dutch/dutch_final.csv"
+    with open(log_fn, 'w') as f:
+        f.write("B1-1 & B1-2\tvs.\tB1-1 & P2\n")
+        test_cues = sorted(list(set(norms_bi_en[2].keys()).intersection(set(norms_en.keys()))))
+        ups_max_1, ups_n_1, rhos_max_1, rhos_n_1 = utils.compute_differences(norms_bi_en[0], norms_bi_en[1], test_cues)
+        ups_max_2, ups_n_2, rhos_max_2, rhos_n_2 = utils.compute_differences(norms_bi_en[0], norms_bi_en[2], test_cues)
+        utils.print_difference_stats(ups_max_1, ups_n_1, rhos_max_1, rhos_n_1, ups_max_2, ups_n_2, rhos_max_2, rhos_n_2, f)
 
-    en_nl_dic = utils.read_dict("./dict/dictionary.csv")
+        f.write("\nB1-1 & B2\tvs.\tB1-1 U B2 & M(EN)\n")
+        ups_max_1, ups_n_1, rhos_max_1, rhos_n_1 = utils.compute_differences(norms_bi_en[0], norms_bi_en[2], test_cues)
+        ups_max_2, ups_n_2, rhos_max_2, rhos_n_2 = utils.compute_differences(norms_bi_en["aggregated"], norms_en, test_cues)
+        utils.print_difference_stats(ups_max_1, ups_n_1, rhos_max_1, rhos_n_1, ups_max_2, ups_n_2, rhos_max_2, rhos_n_2, f)
 
-    monoling = {"E": LexNetMo(fn=fn_en, language="en"),
-                "D": LexNetMo(fn=fn_nl, language="nl")}
+        f.write("\nB1-1 & B2\tvs.\tB1-1 U 2 & M(NL)\n")
+        test_cues = sorted(list(set(norms_bi_nl[2].keys()).intersection(set(norms_nl.keys()))))
+        test_cues = [w for w in test_cues if w not in ["voordeel", "motief"]]
+        ups_max_1, ups_n_1, rhos_max_1, rhos_n_1 = utils.compute_differences(norms_bi_nl[0], norms_bi_nl[2], test_cues)
+        ups_max_2, ups_n_2, rhos_max_2, rhos_n_2 = utils.compute_differences(norms_bi_nl["aggregated"], norms_nl, test_cues)
+        utils.print_difference_stats(ups_max_1, ups_n_1, rhos_max_1, rhos_n_1, ups_max_2, ups_n_2, rhos_max_2, rhos_n_2, f)
 
-    gold_dict = read_test_data()
 
-    test_wordlist = {"E": utils.filter_test_list(monoling["E"].G, sorted(gold_dict['EE'].keys())),
-                     "D": utils.filter_test_list(monoling["D"].G, sorted(gold_dict['DD'].keys()))}
+def fit_models(vertices_nl, vertices_en, norms_nl, norms_en, norms_bi, en_nl_dic, alignments, cognates, orth_sims_en, synt_coocs_en, test_cues, task_direction):
 
-    # test = ['ED','DE']
-    test = ['EE']
-    mode = parameters["orth edge type"]
+    cue_lang, resp_lang = task_direction.split("-")
 
-    for test_condition in test:
+    model_mo = LexNetMo("ucs", norms_nl if resp_lang == "nl" else norms_en, resp_lang)
 
-        res_dir_cond = res_dir + test_condition + "/"
-        if os.path.exists(res_dir_cond):
-            pass
-            #if os.listdir(res_dir_cond) != []:
-            #    sys.exit("Result directory not empty!")
-        else:
-            os.makedirs(res_dir_cond)
+    output_dir = "./output/" + task_direction + "/"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
-        cue_lang = test_condition[0]
-        target_lang = test_condition[1]
+    log_base_file = open(output_dir + "log_base_an_" + task_direction, 'w')
+    log_base_file.write("MODEL:%s\n" % ("base-an-" + resp_lang))
+    ups_max_base_an, ups_n_base_an, rhos_max_base_an, rhos_n_base_an = model_mo.test_network(test_cues, 1, resp_lang, norms_bi, True, log_base_file)
+    log_base_file.close()
+    log_base_file = open(output_dir + "log_base_sa_" + task_direction, 'w')
+    log_base_file.write("MODEL:%s\n" % ("base-sa-" + resp_lang))
+    ups_max_base_sa, ups_n_base_sa, rhos_max_base_sa, rhos_n_base_sa = model_mo.test_network(test_cues, parameters["spreading depth"], resp_lang, norms_bi, True, log_base_file)
+    log_base_file.close()
 
-        test_list = test_wordlist[cue_lang]
+    log_per_word_fn = output_dir + "log_per_word_" + task_direction + ".tsv"
 
-        if cue_lang==target_lang:
-            log_base_file = open(res_dir_cond + "log_base_an_"+test_condition, 'w')
-            log_base_file.write("NET:%s, DEPTH:%i\n" % (target_lang, 1))
-            tvd_base_an, rbd_base_an, jac_base_an, apk_base_an, apk_base_10_an = monoling[target_lang].test_network(test_list, 1, test_condition, gold_full=gold_dict, verbose=True, log_file=log_base_file)
-            log_base_file.close()
-            log_base_file = open(res_dir_cond + "log_base_sa_"+test_condition, 'w')
-            log_base_file.write("NET:%s, DEPTH:%i\n" % (target_lang, parameters["baseline depth"]))
-            tvd_base_sa, rbd_base_sa, jac_base_sa, apk_base_sa, apk_base_10_sa = monoling[target_lang].test_network(test_list, parameters["baseline depth"], test_condition, gold_full=gold_dict, verbose=True, log_file=log_base_file)
-            log_base_file.close()
-        else:
-            tvd_base_sa = rbd_base_sa = jac_base_sa = apk_base_sa = apk_base_10_sa = [0] * len(test_list)
-            tvd_base_an = rbd_base_an = jac_base_an = apk_base_an = apk_base_10_an = [0] * len(test_list)
+    if os.path.exists(log_per_word_fn):
+        log_per_word = open(log_per_word_fn, 'a')
+    else:
+        log_per_word = open(log_per_word_fn, 'w')
+        log_per_word.write("model_type\tk_da\tk_ea\tk_te\tk_cg\tk_or\tk_sy\t")
+        for cue in test_cues:
+            log_per_word.write("%s (u_max)\t%s (u_n)\t%s (r_max)\t%s (r_n)\t" % (cue, cue, cue, cue))
+        log_per_word.write("\n")
+        log_per_word.flush()
 
-        log_per_word_fn = res_dir_cond + "log_per_word_"+test_condition+".tsv"
-        if os.path.exists(log_per_word_fn):
-            log_per_word = open(log_per_word_fn, 'a')
-        else:
-            log_per_word = open(log_per_word_fn, 'w')
-            log_per_word.write("L1_assoc\tL2_assoc\tTE\torth\tsynt\tasymm\t")
-            for w in test_list:
-                log_per_word.write("%s (tvd)\t%s (rbd)\t%s (jac)\t%s (apk_k)\t%s (apk_10)\t" % (w, w, w, w, w))
-            log_per_word.write("\n")
-            log_per_word.flush()
+        log_per_word.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\t" % ("base-an", "base-an", "base-an", "base-an", "base-an", "base-an", "base-an"))
+        for idx in range(len(test_cues)):
+            log_per_word.write("%.3f\t%.3f\t%.3f\t%.3f\t" % (ups_max_base_an[idx], ups_n_base_an[idx], rhos_max_base_an[idx], rhos_n_base_an[idx]))
+        log_per_word.write("\n")
+        log_per_word.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\t" % ("base-sa", "base-sa", "base-sa", "base-sa", "base-sa", "base-sa", "base-sa"))
+        for idx in range(len(test_cues)):
+            log_per_word.write("%.3f\t%.3f\t%.3f\t%.3f\t" % (ups_max_base_sa[idx], ups_n_base_sa[idx], rhos_max_base_sa[idx], rhos_n_base_sa[idx]))
+        log_per_word.write("\n")
+        log_per_word.flush()
 
-            log_per_word.write("%s\t%s\t%s\t%s\t%s\t%s\t" % ("base-an", "base-an", "base-an", "base-sa", "base-an", "base-an"))
-            for idx in range(len(test_list)):
-                log_per_word.write("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t" % (tvd_base_an[idx], rbd_base_an[idx], jac_base_an[idx], apk_base_an[idx], apk_base_10_an[idx]))
-            log_per_word.write("\n")
-            log_per_word.write("%s\t%s\t%s\t%s\t%s\t%s\t" % ("base-sa", "base-sa", "base-sa", "base-sa", "base-sa", "base-sa"))
-            for idx in range(len(test_list)):
-                log_per_word.write("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t" % (tvd_base_sa[idx], rbd_base_sa[idx], jac_base_sa[idx], apk_base_sa[idx], apk_base_10_sa[idx]))
-            log_per_word.write("\n")
-            log_per_word.flush()
+    meta_args = [test_cues, resp_lang, vertices_nl, vertices_en, norms_nl, norms_en, norms_bi, en_nl_dic, alignments, cognates, orth_sims_en, synt_coocs_en,
+                 ups_max_base_an, ups_n_base_an, rhos_max_base_an, rhos_n_base_an, ups_max_base_sa, ups_n_base_sa, rhos_max_base_sa, rhos_n_base_sa, output_dir]
 
-        meta_args = [mode, test_list, test_condition, fn_nl, fn_en, en_nl_dic, tvd_base_an, rbd_base_an, jac_base_an, apk_base_an, apk_base_10_an, tvd_base_sa, rbd_base_sa, jac_base_sa, apk_base_sa, apk_base_10_sa, gold_dict, res_dir_cond]
+    params = [ [model_type, k_da, k_ea, k_te, k_cg, k_or, k_sy]
+               for model_type in ["ucs", "cs"]
+               for k_da in [0, 1, 5, 10, 15, 20, 25]
+               for k_ea in [0, 1, 5, 10, 15, 20, 25]
+               for k_te in [0, 1, 5, 10, 15, 20, 25]
+               for k_cg in [0, 1, 5, 10, 15, 20, 25]
+               for k_or in [0]
+               for k_sy in [0]
+               if (k_da + k_ea + k_te + k_cg > 0)
+               ]
 
-        par = [ [L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio]
-                for L1_assoc_coeff in [5, 10, 15, 20, 25, 30]
-                for L2_assoc_coeff in [1, 2, 5, 10]
-                for TE_coeff in [1, 2, 5, 10]
-                for orth_coeff in [0, 1, 2, 5]
-                for synt_coeff in [0, 1, 2, 5]
-                for asymm_ratio in [1]
-                # if (L1_assoc_coeff >= L2_assoc_coeff and L1_assoc_coeff >= TE_coeff and L1_assoc_coeff >= orth_coeff and L1_assoc_coeff >= synt_coeff)
-                # for (L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, asymm_ratio) in [[5,2,2,0,1],[20,5,5,0,1],[5,1,1,0,1],[2,2,1,0,1]]
-                # for (L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio) in [[14,1,2,2,0,1]]
-                ]
+    args = [meta_args + param_set for param_set in params]
 
-        args = [meta_args + par_set for par_set in par]
+    pool = Pool(workers)
+    for model_type, k_da, k_ea, k_te, k_cg, k_or, k_sy, ups_max, ups_n, rhos_max, rhos_n in pool.imap(evaluate_model, args):
+        log_per_word.write("%s\t%d\t%d\t%d\t%d\t%d\t%d\t" % (model_type, k_da, k_ea, k_te, k_cg, k_or, k_sy))
+        for idx in range(len(test_cues)):
+            log_per_word.write("%.3f\t%.3f\t%.3f\t%.3f\t" % (ups_max[idx], ups_n[idx], rhos_max[idx], rhos_n[idx]))
+        log_per_word.write("\n")
+        log_per_word.flush()
+    log_per_word.close()
 
-        #for a in args:
-        #    run_test(a)
 
-        pool = Pool(workers)
-        for L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio, tvd_m, rbd_m, jac_m, apk_m, apk_m_10 in pool.imap(test_model, args):
-            log_per_word.write("%d\t%d\t%d\t%d\t%d\t%d\t" % (L1_assoc_coeff, L2_assoc_coeff, TE_coeff, orth_coeff, synt_coeff, asymm_ratio))
-            for idx in range(len(test_list)):
-                log_per_word.write("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t" % (tvd_m[idx], rbd_m[idx], jac_m[idx], apk_m[idx], apk_m_10[idx]))
-            log_per_word.write("\n")
-            log_per_word.flush()
+if __name__ == "__main__":
 
-        log_per_word.close()
+    workers = 3
+    if len(sys.argv) > 1:
+        workers = int(sys.argv[1])
 
-        # plot_list = ["yellow:EN"]
-        # for w in plot_list:
-        #     plot_subgraph(en, w, 3, "en")
-        #     plot_subgraph(biling, w, 3, "biling")
+    norms_nl, norms_en, vertices_nl, vertices_en, en_nl_dic, alignments, cognates, norms_bi, orth_sims_en, synt_coocs_en = read_all_data()
+    run_group_comparisons(norms_nl, norms_en, norms_bi["nl-nl"], norms_bi["en-en"], "./output/log_group_comparisons")
 
-main()
+    task_direction = 'en-en'
+    test_cues = sorted(list(set(norms_bi["en-en"][2].keys()).intersection(set(norms_en.keys()))))
+
+    fit_models(vertices_nl, vertices_en, norms_nl, norms_en, norms_bi[task_direction]["aggregated"], en_nl_dic, alignments, cognates, orth_sims_en, synt_coocs_en, test_cues, task_direction)
